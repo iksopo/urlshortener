@@ -39,7 +39,10 @@ data class ShortUrlProperties(
     val sponsor: String? = null,
     val safe: Boolean = true,
     val owner: String? = null,
-    val country: String? = null
+    val country: String? = null,
+    val leftUses: Int? = null,
+    val expiration: OffsetDateTime? = null,
+
 )
 
 /**
