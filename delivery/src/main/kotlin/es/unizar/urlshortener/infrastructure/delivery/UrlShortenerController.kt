@@ -2,19 +2,23 @@ package es.unizar.urlshortener.infrastructure.delivery
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import es.unizar.urlshortener.core.ClickProperties
+import es.unizar.urlshortener.core.FileStorage
 import es.unizar.urlshortener.core.ShortUrl
 import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import java.net.URI
 import javax.servlet.http.HttpServletRequest
+import org.springframework.ui.Model;
 
 /**
  * The specification of the controller.
