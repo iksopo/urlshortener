@@ -14,6 +14,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
+import java.time.OffsetDateTime
 import javax.servlet.http.HttpServletRequest
 
 /**
@@ -42,7 +43,9 @@ interface UrlShortenerController {
  */
 data class ShortUrlDataIn(
     val url: String,
-    val sponsor: String? = null
+    val sponsor: String? = null,
+    val leftUses: Int? = null,
+    val expiration: OffsetDateTime? = null
 )
 
 /**
