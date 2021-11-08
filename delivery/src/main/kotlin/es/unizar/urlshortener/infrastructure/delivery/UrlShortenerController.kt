@@ -84,7 +84,9 @@ class UrlShortenerControllerImpl(
             url = data.url,
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
-                sponsor = data.sponsor
+                sponsor = data.sponsor,
+                leftUses = data.leftUses,
+                expiration = data.expiration
             )
         ).let {
             val h = HttpHeaders()

@@ -12,6 +12,7 @@ interface ClickRepositoryService {
  */
 interface ShortUrlRepositoryService {
     fun findByKey(id: String): ShortUrl?
+    fun deleteByHash(id: String): Boolean
     fun save(su: ShortUrl): ShortUrl
 }
 

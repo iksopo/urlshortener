@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository
  */
 interface ShortUrlEntityRepository : JpaRepository<ShortUrlEntity, String> {
     fun findByHash(hash: String): ShortUrlEntity?
+    fun deleteByHash(hash: String): Boolean
 }
 
 /**
