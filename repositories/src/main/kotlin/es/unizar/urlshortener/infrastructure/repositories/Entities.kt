@@ -38,6 +38,6 @@ class ShortUrlEntity(
     val safe: Boolean,
     val ip: String?,
     val country: String?,
-    val leftUses: Int?,
+    var leftUses: Int?,
     val expiration: OffsetDateTime?
 )

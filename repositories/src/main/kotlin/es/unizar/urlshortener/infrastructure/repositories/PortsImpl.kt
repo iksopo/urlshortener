@@ -1,9 +1,7 @@
 package es.unizar.urlshortener.infrastructure.repositories
 
-import es.unizar.urlshortener.core.Click
-import es.unizar.urlshortener.core.ClickRepositoryService
-import es.unizar.urlshortener.core.ShortUrl
-import es.unizar.urlshortener.core.ShortUrlRepositoryService
+import es.unizar.urlshortener.core.*
+import java.time.OffsetDateTime
 
 /**
  * Implementation of the port [ClickRepositoryService].
@@ -22,6 +20,26 @@ class ShortUrlRepositoryServiceImpl(
 ) : ShortUrlRepositoryService {
     override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findByHash(id)?.toDomain()
     override fun deleteByHash(id: String): Boolean = shortUrlEntityRepository.deleteByHash(id)
+    override fun updateLeftUses(su : ShortUrl) {
+        su.properties.leftUses?.let {
+            if (it == 1) {
+                deleteByHash(su.hash)
+            } else {
+                su.properties.leftUses = it -1
+                save(su)
+            }
+        }
+    }
+    override fun checkNotExpired(su : ShortUrl) : Boolean {
+        su.properties.expiration?.let {
+            val now = OffsetDateTime.now();
+            if (now.compareTo(it) > 0) {
+                deleteByHash(su.hash)
+                return false
+            } else {
+                return true
+            }
+        } ?: return true
+    }
     override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
 }
-

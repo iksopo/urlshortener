@@ -23,21 +23,10 @@ class RedirectUseCaseImpl(
 ) : RedirectUseCase {
     override fun redirectTo(key: String): Redirection =
         shortUrlRepository.findByKey(key)?.let {
-            var shortUrlToUpdate = it
-            shortUrlToUpdate.properties.leftUses?.let {
-                    shortUrlToUpdate.properties.leftUses = it - 1;
-                    if (it == 1) {
-                        shortUrlRepository.deleteByHash(shortUrlToUpdate.hash)
-                    }
+            shortUrlRepository.updateLeftUses(it)
+            if (!shortUrlRepository.checkNotExpired(it)){
+                throw RedirectionNotFound(key)
             }
-            shortUrlToUpdate.properties.expiration?.let {
-                val now = OffsetDateTime.now();
-                if (now.compareTo(shortUrlToUpdate.properties.expiration) >= 0) {
-                    shortUrlRepository.deleteByHash(shortUrlToUpdate.hash)
-                    throw RedirectionNotFound(key)
-                }
-            }
-            // Actualizar de la bbdd
             return it.redirection
         } ?: throw RedirectionNotFound(key)
 }
