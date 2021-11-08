@@ -43,9 +43,9 @@ interface UrlShortenerController {
  */
 data class ShortUrlDataIn(
     val url: String,
-    val sponsor: String? = null,
     val leftUses: Int? = null,
-    val expiration: OffsetDateTime? = null
+    val expiration: OffsetDateTime? = null,
+    val sponsor: String? = null
 )
 
 /**
