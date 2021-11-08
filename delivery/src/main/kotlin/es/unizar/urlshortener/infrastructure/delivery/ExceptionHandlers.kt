@@ -1,5 +1,6 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
+import es.unizar.urlshortener.core.InvalidTypeOfFile
 import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
 import org.springframework.http.HttpHeaders
@@ -29,6 +30,11 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [RedirectionNotFound::class])
     @ResponseStatus(HttpStatus.NOT_FOUND)
     protected fun redirectionNotFound(ex: RedirectionNotFound) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [InvalidTypeOfFile::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected fun invalidTypeOfFile(ex: InvalidTypeOfFile) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
 }
 
 data class ErrorMessage(

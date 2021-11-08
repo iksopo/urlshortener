@@ -1,28 +1,23 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.FileStorage
-import es.unizar.urlshortener.core.ShortUrlProperties
-import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
-import es.unizar.urlshortener.core.usecases.LogClickUseCase
+import es.unizar.urlshortener.core.InvalidTypeOfFile
+import es.unizar.urlshortener.core.usecases.CreateShortUrlsFromCsvUseCase
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.Resource
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import javax.servlet.http.HttpServletRequest
 
 @Controller
 class CsvReceiverController(
-    val createShortUrlUseCase: CreateShortUrlUseCase
+    val createShortUrlsFromCsvUseCase: CreateShortUrlsFromCsvUseCase
 ) {
     @Autowired
     lateinit var fileStorage: FileStorage
@@ -32,49 +27,47 @@ class CsvReceiverController(
         return "uploadform"
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/csv")
-    fun uploadMultipartFile(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest): String {
-        var valid = (file.originalFilename != null && file.originalFilename!!.isNotEmpty())
-        var previousNameSplit: List<String>
-        var extension = ""
-        if (valid) {
-            previousNameSplit = file.originalFilename!!.split(".")
-            extension = previousNameSplit[previousNameSplit.size - 1]
-        }
-        valid = (valid && extension == "csv")
-        if (valid) {
-            val newName = "${fileStorage.generateName()}.$extension"
-            fileStorage.store(file, newName)
-            val lines = fileStorage.readLines(newName)
-            var newLines = ArrayList<String>()
-            for (line in lines) {
-                createShortUrlUseCase.create(
-                    url = line,
-                    data = ShortUrlProperties(
-                        ip = request.remoteAddr,
-                        sponsor = null
-                    )
-                ).let {
-                    //val h = HttpHeaders()
-                    val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
-                    //h.location = url
-                    val response = ShortUrlDataOut(
+    fun uploadMultipartFile(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest): /*ResponseEntity<ShortUrlDataOut>*/ String {
+        var response = ShortUrlDataOut()
+
+        val h = HttpHeaders()
+        createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
+            val newLines = ArrayList<String>()
+            var isFirst = true
+            for (pair in it.urls) {
+                val shortUrl = pair.first
+                val errorMsg = pair.second
+                val target = shortUrl.redirection.target
+                val url = linkTo<UrlShortenerControllerImpl> { redirectTo(shortUrl.hash, request) }.toUri()
+                if (errorMsg != null) {
+                    newLines.add("$target,,$errorMsg")
+                    if (isFirst) {
+                        model.addAttribute("firstUrlError", "$errorMsg")
+                    }
+                } else {
+                    newLines.add("$target,$url,")
+                }
+                if (isFirst) {
+                    h.location = url
+                    response = ShortUrlDataOut(
                         url = url,
                         properties = mapOf(
-                            "safe" to it.properties.safe
+                            "safe" to shortUrl.properties.safe
                         )
                     )
-                    newLines.add("$line,$url,")
-                    //ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
+                    isFirst = false
                 }
             }
-            fileStorage.overwriteFile(newName, newLines)
-            model.addAttribute("message", "File uploaded successfully! -> filename = " + file.originalFilename)
-            model.addAttribute("file", newName)
-        } else {
-            model.addAttribute("message", "The name or type of file is invalid")
+
+            fileStorage.overwriteFile(it.filename, newLines)
+            model.addAttribute("message", "Your file ${file.originalFilename} has been successfully processed")
+            model.addAttribute("file", it.filename)
+
+            //return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
+            return "uploadform"
         }
-        return "uploadform"
     }
 
     @GetMapping("/csv-{filename:.*}")

@@ -11,16 +11,7 @@ import org.springframework.context.annotation.Bean
  * The marker that makes this project a Spring Boot application.
  */
 @SpringBootApplication
-class UrlShortenerApplication{
-    @Autowired
-    lateinit var fileStorage: FileStorage
-
-    @Bean
-    fun run() = CommandLineRunner {
-        fileStorage.deleteAll()
-        fileStorage.init()
-    }
-}
+class UrlShortenerApplication
 
 /**
  * The main entry point.

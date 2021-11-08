@@ -27,7 +27,7 @@
         <div th:if="${message}">
           <span th:text="${message}"/>
           <div th:if="${file}">
-            <a th:href="@{/csv-${file}}" th:text="${file}"/>
+            <a th:href="@{/csv-{name}(name=${file})}" th:text="${file}"/>
           </div>
         </div>
       </div>
