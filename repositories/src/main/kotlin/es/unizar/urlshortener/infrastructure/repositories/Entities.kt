@@ -39,5 +39,5 @@ class ShortUrlEntity(
     val ip: String?,
     val country: String?,
     var leftUses: Int?,
-    val expiration: OffsetDateTime?
+    val expiration: Date?
 )

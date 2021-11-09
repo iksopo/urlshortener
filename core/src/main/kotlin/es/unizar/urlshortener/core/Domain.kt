@@ -41,9 +41,8 @@ data class ShortUrlProperties(
     val owner: String? = null,
     val country: String? = null,
     var leftUses: Int? = null,
-    val expiration: OffsetDateTime? = null,
-
-    )
+    val expiration: Date? = null
+)
 
 /**
  * A [ClickProperties] is the bag of properties that a [Click] may have.

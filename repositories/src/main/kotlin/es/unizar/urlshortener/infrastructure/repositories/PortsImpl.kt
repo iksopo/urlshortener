@@ -2,7 +2,9 @@ package es.unizar.urlshortener.infrastructure.repositories
 
 import es.unizar.urlshortener.core.*
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 /**
  * Implementation of the port [ClickRepositoryService].
@@ -33,7 +35,7 @@ class ShortUrlRepositoryServiceImpl(
     override fun checkNotExpired(su : ShortUrl) : Boolean {
         su.properties.expiration?.let {
             val now = OffsetDateTime.now();
-            if (now.compareTo(it) > 0) {
+            if (now.compareTo(it.toInstant().atOffset(ZoneOffset.UTC)) > 0) {
                 shortUrlEntityRepository.deleteByHash(su.hash)
                 return false
             } else {

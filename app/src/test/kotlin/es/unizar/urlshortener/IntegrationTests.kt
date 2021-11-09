@@ -1,5 +1,6 @@
 package es.unizar.urlshortener
 
+import es.unizar.urlshortener.infrastructure.delivery.PATTERN
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -21,6 +22,7 @@ import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
 import java.net.URI
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -98,7 +100,7 @@ class HttpRequestTest {
     }
 
     @Test
-    fun `creates an url with 1 left uses and fetchs it twice`() {
+    fun `creates an url with 1 uses left and fetchs it twice`() {
         val sUrl = shortUrl("http://example.com/", 1)
         val target = sUrl.headers.location
         require(target != null)
@@ -110,21 +112,41 @@ class HttpRequestTest {
         assertThat(response2.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
 
-    /*
     @Test
-    fun `creates an url that expires in 5 seconds`() {
-        val sUrl = shortUrl("http://example.com/", null, OffsetDateTime.now().plusSeconds(5))
+    fun `creates an url with 2 left uses and fetchs it three times`() {
+        val sUrl = shortUrl("http://example.com/", 2)
         val target = sUrl.headers.location
         require(target != null)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
 
-        Thread.sleep(7_000)
         val response2 = restTemplate.getForEntity(target, String::class.java)
-        assertThat(response2.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response2.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        val response3 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
-    */
+
+    @Test
+    fun `creates an url that expires in 5 seconds`() {
+        val sUrl = shortUrl("http://example.com/", null, OffsetDateTime.now().plusSeconds(7))
+        println(sUrl)
+        val target = sUrl.headers.location
+        require(target != null)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        val response2 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response2.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        Thread.sleep(8_000)
+        val response3 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
@@ -136,7 +158,8 @@ class HttpRequestTest {
             data["leftUses"] = it.toString()
         }
         expiration?.let {
-            data["expiration"] = expiration.toString()
+            data["expiration"] = expiration.format(DateTimeFormatter.ofPattern(PATTERN))
+            println(data["expiration"])
         }
         return restTemplate.postForEntity(
             "http://localhost:$port/api/link",
