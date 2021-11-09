@@ -1,15 +1,12 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.FileStorage
-import es.unizar.urlshortener.core.InvalidTypeOfFile
 import es.unizar.urlshortener.core.usecases.CreateShortUrlsFromCsvUseCase
+import org.apache.tomcat.util.http.fileupload.IOUtils
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.core.io.Resource
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
-import org.springframework.http.server.ServerHttpResponse
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
@@ -30,8 +27,8 @@ class CsvReceiverController(
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/csv")
-    fun uploadMultipartFile(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
+    @PostMapping("/csv", consumes = [ "multipart/form-data" ])
+    fun uploadCsv(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
         val h = HttpHeaders()
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
             val newLines = ArrayList<String>()
@@ -68,12 +65,17 @@ class CsvReceiverController(
         }
     }
 
-    @GetMapping("/csv-{filename:.*}")
-    fun downloadFile(@PathVariable filename: String): ResponseEntity<Resource> {
+    @PostMapping("/csv-{filename:.*}")
+    fun downloadFile(@PathVariable filename: String, response: HttpServletResponse)/*: ResponseEntity<Resource>*/ {
         println(filename)
         val file = fileStorage.loadFile(filename)
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"")
-            .body(file)
+        response.contentType = "text/csv"
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"shortUrls.csv\"")
+        var outputStream = response.outputStream
+        var inputStream = file.inputStream
+        IOUtils.copy(inputStream, outputStream)
+        outputStream.close()
+        inputStream.close()
+        fileStorage.deleteFile(filename)
     }
 }

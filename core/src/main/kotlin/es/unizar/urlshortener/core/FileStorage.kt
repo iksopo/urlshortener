@@ -38,7 +38,7 @@ class FileStorageImpl: FileStorage{
         if(resource.exists() || resource.isReadable) {
             return resource
         }else{
-            throw RuntimeException("FAIL!")
+            throw FileDoesNotExist(filename)
         }
     }
 

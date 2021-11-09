@@ -1,5 +1,6 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
+import es.unizar.urlshortener.core.FileDoesNotExist
 import es.unizar.urlshortener.core.InvalidTypeOfFile
 import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
@@ -35,6 +36,11 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [InvalidTypeOfFile::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected fun invalidTypeOfFile(ex: InvalidTypeOfFile) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [FileDoesNotExist::class])
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    protected fun fileDoesNotExist(ex: FileDoesNotExist) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
 }
 
 data class ErrorMessage(
