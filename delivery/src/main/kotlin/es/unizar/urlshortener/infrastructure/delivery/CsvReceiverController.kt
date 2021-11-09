@@ -29,7 +29,6 @@ class CsvReceiverController(
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/csv", consumes = [ "multipart/form-data" ])
     fun uploadCsv(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
-        val h = HttpHeaders()
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
             val newLines = ArrayList<String>()
             var isFirst = true
@@ -51,8 +50,7 @@ class CsvReceiverController(
                 }
 
                 if (isFirst) {
-                    h.location = url
-                    response.addHeader("location", "$url")
+                    response.addHeader("Location", "$url")
                     isFirst = false
                 }
             }
@@ -67,7 +65,6 @@ class CsvReceiverController(
 
     @PostMapping("/csv-{filename:.*}")
     fun downloadFile(@PathVariable filename: String, response: HttpServletResponse)/*: ResponseEntity<Resource>*/ {
-        println(filename)
         val file = fileStorage.loadFile(filename)
         response.contentType = "text/csv"
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"shortUrls.csv\"")
