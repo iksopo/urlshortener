@@ -9,11 +9,13 @@ import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.http.server.ServerHttpResponse
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 @Controller
 class CsvReceiverController(
@@ -29,9 +31,7 @@ class CsvReceiverController(
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/csv")
-    fun uploadMultipartFile(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest): /*ResponseEntity<ShortUrlDataOut>*/ String {
-        var response = ShortUrlDataOut()
-
+    fun uploadMultipartFile(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
         val h = HttpHeaders()
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
             val newLines = ArrayList<String>()
@@ -48,15 +48,14 @@ class CsvReceiverController(
                     }
                 } else {
                     newLines.add("$target,$url,")
+                    if (isFirst) {
+                        model.addAttribute("firstUrl", "$url")
+                    }
                 }
+
                 if (isFirst) {
                     h.location = url
-                    response = ShortUrlDataOut(
-                        url = url,
-                        properties = mapOf(
-                            "safe" to shortUrl.properties.safe
-                        )
-                    )
+                    response.addHeader("location", "$url")
                     isFirst = false
                 }
             }
@@ -65,7 +64,6 @@ class CsvReceiverController(
             model.addAttribute("message", "Your file ${file.originalFilename} has been successfully processed")
             model.addAttribute("file", it.filename)
 
-            //return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
             return "uploadform"
         }
     }

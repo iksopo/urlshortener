@@ -26,8 +26,20 @@
         </form>
         <div th:if="${message}">
           <span th:text="${message}"/>
+          <br/>
           <div th:if="${file}">
             <a th:href="@{/csv-{name}(name=${file})}" th:text="${file}"/>
+          </div>
+          <div th:if="${firstUrlError}">
+            <div class='alert alert-danger lead'>
+              The first url in your file could not be shortened:
+              <div th:text="${firstUrlError}"></div>
+            </div>
+          </div>
+          <div th:if="${firstUrl}">
+            <div class='alert alert-success lead'>
+              <a target="_blank" th:href="@{${firstUrl}}" th:text="${firstUrl}" />
+            </div>
           </div>
         </div>
       </div>
