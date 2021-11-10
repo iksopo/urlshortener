@@ -103,6 +103,16 @@ class HttpRequestTest {
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "click")).isEqualTo(0)
     }
 
+    @Test
+    fun `csv page works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/csv", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body).contains("Create short URLs for the URLs in a CSV file")
+    }
+
+    @Test
+    fun `uploadCsv returns the first short URL and the link to the file when the uploaded file and the first URL are valid`() {}
+
     private fun shortUrl(url: String): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED

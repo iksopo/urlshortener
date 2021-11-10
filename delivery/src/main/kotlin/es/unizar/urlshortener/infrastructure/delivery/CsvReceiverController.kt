@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
@@ -27,7 +28,7 @@ class CsvReceiverController(
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/csv", consumes = [ "multipart/form-data" ])
+    @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
     fun uploadCsv(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
             val newLines = ArrayList<String>()
@@ -68,11 +69,9 @@ class CsvReceiverController(
         val file = fileStorage.loadFile(filename)
         response.contentType = "text/csv"
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"shortUrls.csv\"")
-        var outputStream = response.outputStream
-        var inputStream = file.inputStream
-        IOUtils.copy(inputStream, outputStream)
-        outputStream.close()
-        inputStream.close()
+        IOUtils.copy(file.inputStream, response.outputStream)
+        response.outputStream.close()
+        file.inputStream.close()
         fileStorage.deleteFile(filename)
     }
 }
