@@ -11,6 +11,25 @@
 			src="webjars/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="js/app.js">
 	</script>
+	<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+
+	<script>
+		var ws = new SockJS('/ws');
+
+		ws.onmessage = function(msg) {
+			var data = JSON.parse(msg.data);
+			document.getElementById("uptime").innerHTML = data.uptime;
+			document.getElementById("redTime").innerHTML = data.redTime;
+			document.getElementById("memUsed").innerHTML = data.memUsed;
+			document.getElementById("memFree").innerHTML = data.memFree;
+		}
+		ws.onclose = function() {
+			//alert("Disconnected from server");
+		}
+		ws.onopen = function() {
+			ws.send("");
+		}
+	</script>
 </head>
 <body>
 <div class="container-full">
@@ -18,24 +37,16 @@
 		<div class="col-lg-12 text-center">
 			<h1>Metrics</h1>
 			<p>Uptime:</p>
-			<div th:if="${uptime}">
-				<span th:text="${uptime}"/>
-			</div>
+			<span id="uptime"></span>
 			<br>
 			<p>Time since last redirection:</p>
-			<div th:if="${redTime}">
-				<span th:text="${redTime}"/>
-			</div>
+			<span id="redTime"></span>
 			<br>
 			<p>Memory used:</p>
-			<div th:if="${memUsed}">
-				<span th:text="${memUsed}"/>
-			</div>
+			<span id="memUsed"></span>
 			<br>
 			<p>Free memory:</p>
-			<div th:if="${memFree}">
-				<span th:text="${memFree}"/>
-			</div>
+			<span id="memFree"></span>
 			<br>
 		</div>
 	</div>
