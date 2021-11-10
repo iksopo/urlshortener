@@ -89,3 +89,22 @@ class ThreatMatchesFindRequest (
     @JsonProperty("threatInfo")
     var threatInfo: ThreatInfo? = null
 )
+
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+class ThreatMatch (){
+    @JsonProperty("threatType")
+    var threatType : ThreatType? = null
+    @JsonProperty("platformType")
+    var platformType: PlatformType? = null
+    @JsonProperty("threatEntryType")
+    var threatEntryType: ThreatEntryType? = null
+    @JsonProperty("cacheDuration")
+    var cacheDuration: String? = null
+}
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+class ThreatMatchesFindResponse (){
+    @JsonProperty("matches")
+    var matches : List<ThreatMatch>? = null
+}
