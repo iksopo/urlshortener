@@ -1,5 +1,6 @@
 package es.unizar.urlshortener
 
+import es.unizar.urlshortener.infrastructure.delivery.PATTERN
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -20,6 +21,8 @@ import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
 import java.net.URI
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -88,19 +91,42 @@ class HttpRequestTest {
 
     @Test
     fun `creates returns bad request if it can't compute a hash`() {
-        val headers = HttpHeaders()
-        headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
-
-        val data: MultiValueMap<String, String> = LinkedMultiValueMap()
-        data["url"] = "ftp://example.com/"
-
-        val response = restTemplate.postForEntity("http://localhost:$port/api/link",
-            HttpEntity(data, headers), ShortUrlDataOut::class.java)
-
-        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
-
-        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(0)
+        val response = shortUrl("http://example.com/")
+        assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://localhost:$port/tiny-f684a3c4"))
+        assertThat(response.body?.url).isEqualTo(URI.create("http://localhost:$port/tiny-f684a3c4"))
+        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "click")).isEqualTo(0)
+    }
+
+    @Test
+    fun `creates an url with 1 uses left and fetchs it twice`() {
+        val sUrl = shortUrl("http://example.com/", 1)
+        val target = sUrl.headers.location
+        require(target != null)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        val response2 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    }
+
+    @Test
+    fun `creates an url with 2 left uses and fetchs it three times`() {
+        val sUrl = shortUrl("http://example.com/", 2)
+        val target = sUrl.headers.location
+        require(target != null)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        val response2 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response2.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        val response3 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
 
     @Test
@@ -111,18 +137,41 @@ class HttpRequestTest {
     }
 
     @Test
-    fun `uploadCsv returns the first short URL and the link to the file when the uploaded file and the first URL are valid`() {}
+    fun `creates an url that expires in 5 seconds`() {
+        val sUrl = shortUrl("http://example.com/", null, OffsetDateTime.now().plusSeconds(7))
+        println(sUrl)
+        val target = sUrl.headers.location
+        require(target != null)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
 
-    private fun shortUrl(url: String): ResponseEntity<ShortUrlDataOut> {
+        val response2 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response2.headers.location).isEqualTo(URI.create("http://example.com/"))
+
+        Thread.sleep(8_000)
+        val response3 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    }
+
+    private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
 
         val data: MultiValueMap<String, String> = LinkedMultiValueMap()
         data["url"] = url
-
+        leftUses?.let {
+            data["leftUses"] = it.toString()
+        }
+        expiration?.let {
+            data["expiration"] = expiration.format(DateTimeFormatter.ofPattern(PATTERN))
+            println(data["expiration"])
+        }
         return restTemplate.postForEntity(
             "http://localhost:$port/api/link",
             HttpEntity(data, headers), ShortUrlDataOut::class.java
         )
     }
+
 }

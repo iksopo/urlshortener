@@ -3,6 +3,7 @@ package es.unizar.urlshortener.core.usecases
 import es.unizar.urlshortener.core.Redirection
 import es.unizar.urlshortener.core.RedirectionNotFound
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
+import java.time.OffsetDateTime
 
 /**
  * Given a key returns a [Redirection] that contains a [URI target][Redirection.target]
@@ -20,9 +21,13 @@ interface RedirectUseCase {
 class RedirectUseCaseImpl(
     private val shortUrlRepository: ShortUrlRepositoryService
 ) : RedirectUseCase {
-    override fun redirectTo(key: String) = shortUrlRepository
-        .findByKey(key)
-        ?.redirection
-        ?: throw RedirectionNotFound(key)
+    override fun redirectTo(key: String): Redirection =
+        shortUrlRepository.findByKey(key)?.let {
+            shortUrlRepository.updateLeftUses(it)
+            if (!shortUrlRepository.checkNotExpired(it)){
+                throw RedirectionNotFound(key)
+            }
+            return it.redirection
+        } ?: throw RedirectionNotFound(key)
 }
 
