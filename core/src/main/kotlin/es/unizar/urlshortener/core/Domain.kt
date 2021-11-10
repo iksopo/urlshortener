@@ -54,3 +54,11 @@ data class ClickProperties(
     val platform: String? = null,
     val country: String? = null
 )
+
+/**
+ * A [FileAndShortUrl] is the data about a file that contains a list of urls, and the list of the [ShortUrl] associated with them.
+ */
+data class FileAndShortUrl(
+    val filename: String = "",
+    val urls: List<Pair<ShortUrl, String?>> = ArrayList()
+)

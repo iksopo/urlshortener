@@ -130,6 +130,13 @@ class HttpRequestTest {
     }
 
     @Test
+    fun `csv page works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/csv", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body).contains("Create short URLs for the URLs in a CSV file")
+    }
+
+    @Test
     fun `creates an url that expires in 5 seconds`() {
         val sUrl = shortUrl("http://example.com/", null, OffsetDateTime.now().plusSeconds(7))
         println(sUrl)
