@@ -1,6 +1,7 @@
 package es.unizar.urlshortener.core
 
 import java.time.OffsetDateTime
+import java.util.*
 
 /**
  * A [Click] captures a request of redirection of a [ShortUrl] identified by its [hash].
