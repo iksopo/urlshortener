@@ -10,10 +10,8 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import es.unizar.urlshortener.core.ClickProperties
-import es.unizar.urlshortener.core.FileStorage
-import es.unizar.urlshortener.core.ShortUrl
-import es.unizar.urlshortener.core.ShortUrlProperties
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
@@ -115,6 +113,21 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
+
+            //Check URL is safe
+            val mapper = jacksonObjectMapper()
+            val safeRequest = ThreatMatchesFindRequest(
+                ClientInfo("testId","testVesrion"),
+                ThreatInfo(
+                    listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION),
+                    listOf(PlatformType.ALL_PLATFORMS),
+                    listOf(ThreatEntryType.URL),
+                    listOf(ThreatEntry("blablaURIExample",ThreatEntryRequestType.URL))
+                )
+            )
+            val serialized = mapper.writeValueAsString(safeRequest)
+            println(serialized);
+
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
