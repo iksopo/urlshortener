@@ -13,6 +13,8 @@ interface ClickRepositoryService {
 interface ShortUrlRepositoryService {
     fun findByKey(id: String): ShortUrl?
     fun save(su: ShortUrl): ShortUrl
+    fun updateLeftUses(su : ShortUrl)
+    fun checkNotExpired(su : ShortUrl) : Boolean
 }
 
 /**

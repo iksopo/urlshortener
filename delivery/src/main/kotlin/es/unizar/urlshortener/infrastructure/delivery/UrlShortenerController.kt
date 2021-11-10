@@ -1,20 +1,37 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonSerializer
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import es.unizar.urlshortener.core.ClickProperties
-import es.unizar.urlshortener.core.ShortUrl
 import es.unizar.urlshortener.core.ShortUrlProperties
-import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
+import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.io.IOException
 import java.net.URI
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Date
 import javax.servlet.http.HttpServletRequest
+
 
 /**
  * The specification of the controller.
@@ -37,11 +54,15 @@ interface UrlShortenerController {
 
 }
 
+const val PATTERN = "yyyy-MM-dd HH:mm:ss"
 /**
  * Data required to create a short url.
  */
 data class ShortUrlDataIn(
     val url: String,
+    val leftUses: Int? = null,
+    @DateTimeFormat(pattern = PATTERN)
+    val expiration: Date? = null,
     val sponsor: String? = null
 )
 
@@ -81,7 +102,9 @@ class UrlShortenerControllerImpl(
             url = data.url,
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
-                sponsor = data.sponsor
+                sponsor = data.sponsor,
+                leftUses = data.leftUses,
+                expiration = data.expiration
             )
         ).let {
             val h = HttpHeaders()
@@ -96,3 +119,4 @@ class UrlShortenerControllerImpl(
             ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
         }
 }
+
