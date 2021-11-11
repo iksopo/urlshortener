@@ -38,6 +38,7 @@ project(":core") {
     dependencies {
         "implementation"("org.springframework.boot:spring-boot-starter-web")
         "implementation"("org.springframework.boot:spring-boot-starter-thymeleaf")
+        "implementation"("org.springframework.boot:spring-boot-starter-websocket")
         "implementation"("org.springframework.boot:spring-boot-starter-hateoas")
         "implementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -72,6 +73,7 @@ project(":delivery") {
 
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
+        "implementation"("org.springframework.boot:spring-boot-starter-websocket")
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false

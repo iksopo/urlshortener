@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<title>URL Shortener</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css"
+		  href="webjars/bootstrap/3.3.5/css/bootstrap.min.css" />
+	<script type="text/javascript" src="webjars/jquery/2.1.4/jquery.min.js"></script>
+	<script type="text/javascript"
+			src="webjars/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/app.js">
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+
+	<script>
+		var ws = new SockJS('/wsMetrics');
+
+		ws.onmessage = function(msg) {
+			var data = JSON.parse(msg.data);
+			document.getElementById("uptime").innerHTML = data.uptime;
+			document.getElementById("redTime").innerHTML = data.redTime;
+			document.getElementById("memUsed").innerHTML = data.memUsed;
+			document.getElementById("memFree").innerHTML = data.memFree;
+		}
+	</script>
+</head>
+<body>
+<div class="container-full">
+	<div class="row">
+		<div class="col-lg-12 text-center">
+			<h1>Metrics</h1>
+			<p>Uptime:</p>
+			<span id="uptime"></span>
+			<br>
+			<br>
+			<p>Time since last redirection:</p>
+			<span id="redTime"></span>
+			<br>
+			<br>
+			<p>Memory used:</p>
+			<span id="memUsed"></span>
+			<br>
+			<br>
+			<p>Free memory:</p>
+			<span id="memFree"></span>
+		</div>
+	</div>
+</div>
+</body>
+</html>
