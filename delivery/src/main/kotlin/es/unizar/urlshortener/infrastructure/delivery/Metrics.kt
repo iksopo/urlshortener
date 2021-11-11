@@ -35,18 +35,13 @@ class WSHandler : TextWebSocketHandler() {
 	val sessionList = ArrayList<WebSocketSession>()
 	var startTime = System.currentTimeMillis()
 
-	override fun afterConnectionClosed(session: WebSocketSession, staus: CloseStatus) {
-		//println("Client disconected")
-		sessionList -= session
+	override fun afterConnectionEstablished(session: WebSocketSession) {
+		sessionList += session
+		sendMetrics(session)
 	}
 
-	public override fun handleTextMessage(session: WebSocketSession, message: TextMessage) {
-		//println("Message received: " + message)
-		if (!sessionList.contains(session)) {
-			//println("Client connected")
-			sessionList += session
-		}
-		sendMetrics(session)
+	override fun afterConnectionClosed(session: WebSocketSession, staus: CloseStatus) {
+		sessionList -= session
 	}
 
 	@Scheduled(fixedRate = 1000)
@@ -60,11 +55,13 @@ class WSHandler : TextWebSocketHandler() {
 	fun sendMetrics(session: WebSocketSession) {
 		var rt = Runtime.getRuntime()
 		var uts = (System.currentTimeMillis()-startTime)/1000.0
-		var ut = ((uts/86400)).toInt().toString() + " days, " + ((uts/3600)%24).toInt().toString() + " hours, " + ((uts/60)%60).toInt().toString() + " minutes and " + (uts%60).toInt().toString() + " seconds"
+		var ut = ((uts/86400)).toInt().toString() + " days, " +
+			((uts/3600)%24).toInt().toString() + " hours, "+
+			((uts/60)%60).toInt().toString() + " minutes and " +
+			(uts%60).toInt().toString() + " seconds"
 		var mu = ((rt.totalMemory()-rt.freeMemory())/1000000).toString() + "MB"
 		var mf = (rt.freeMemory()/1000000).toString() + "MB"
 		var data = jacksonObjectMapper().writeValueAsString(Data(ut, "TODO", mu, mf))
-		println("Sending: " + data)
 		session.sendMessage(TextMessage(data))
 	}
 
@@ -77,7 +74,7 @@ class WSConfig : WebSocketConfigurer {
 	lateinit var socketHandler: WSHandler
 
 	override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
-		registry.addHandler(socketHandler, "/ws").withSockJS()
+		registry.addHandler(socketHandler, "/wsMetrics").withSockJS()
 	}
 
 }

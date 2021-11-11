@@ -14,7 +14,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 
 	<script>
-		var ws = new SockJS('/ws');
+		var ws = new SockJS('/wsMetrics');
 
 		ws.onmessage = function(msg) {
 			var data = JSON.parse(msg.data);
@@ -22,12 +22,6 @@
 			document.getElementById("redTime").innerHTML = data.redTime;
 			document.getElementById("memUsed").innerHTML = data.memUsed;
 			document.getElementById("memFree").innerHTML = data.memFree;
-		}
-		ws.onclose = function() {
-			//alert("Disconnected from server");
-		}
-		ws.onopen = function() {
-			ws.send("");
 		}
 	</script>
 </head>
@@ -39,15 +33,17 @@
 			<p>Uptime:</p>
 			<span id="uptime"></span>
 			<br>
+			<br>
 			<p>Time since last redirection:</p>
 			<span id="redTime"></span>
+			<br>
 			<br>
 			<p>Memory used:</p>
 			<span id="memUsed"></span>
 			<br>
+			<br>
 			<p>Free memory:</p>
 			<span id="memFree"></span>
-			<br>
 		</div>
 	</div>
 </div>
