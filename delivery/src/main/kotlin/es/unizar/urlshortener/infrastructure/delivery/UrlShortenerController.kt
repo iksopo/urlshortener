@@ -12,9 +12,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import es.unizar.urlshortener.core.*
-import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
-import es.unizar.urlshortener.core.usecases.LogClickUseCase
-import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import es.unizar.urlshortener.core.usecases.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -100,7 +98,7 @@ class UrlShortenerControllerImpl(
 
 
     @Autowired
-    lateinit var restTemplate: RestTemplate
+    lateinit var validateURIUseCase: ValidateURIUseCase
 
     @GetMapping("/tiny-{id:.*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
@@ -128,28 +126,25 @@ class UrlShortenerControllerImpl(
 
             //Check URL is safe
             //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
-            val mapper = jacksonObjectMapper()
+            val validationResponse = validateURIUseCase.ValidateURI(data.url)
 
-            val safeRequest = ThreatMatchesFindRequest(
-                ClientInfo(CLIENTNAME, CLIENTVERSION),
-                ThreatInfo(
-                    listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION,ThreatType.UNWANTED_SOFTWARE),
-                    listOf(PlatformType.WINDOWS),
-                    listOf(ThreatEntryType.URL),
-                    listOf(ThreatEntry(data.url,ThreatEntryRequestType.URL))
-                )
-            )
-            val serialized = mapper.writeValueAsString(safeRequest)
-            val httpResponse = restTemplate.postForObject(URI(FINDURL),HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
-            if(!httpResponse?.matches.isNullOrEmpty()){
+            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
                 val response = ShortUrlDataOut(
                     url = url,
                     properties = mapOf(
                         "Unsafe" to it.properties.safe,
                     )
                 )
-                response.properties.entries
                 return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.FORBIDDEN)
+            }
+            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
+                val response = ShortUrlDataOut(
+                    url = url,
+                    properties = mapOf(
+                        "Not Reachable" to it.properties.safe,
+                    )
+                )
+                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.NOT_FOUND)
             }
 
 
