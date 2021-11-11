@@ -144,6 +144,16 @@ class UrlShortenerControllerImpl(
             println(serialized);
             val serialized2 = mapper.writeValueAsString(httpResponse)
             println(serialized2);
+            if(!httpResponse?.matches.isNullOrEmpty()){
+                val response = ShortUrlDataOut(
+                    url = url,
+                    properties = mapOf(
+                        "Unsafe" to it.properties.safe
+                    )
+                )
+                response.properties.entries
+                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.FORBIDDEN)
+            }
 
 
             val response = ShortUrlDataOut(
