@@ -12,6 +12,7 @@ import es.unizar.urlshortener.infrastructure.repositories.ClickRepositoryService
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -56,3 +57,5 @@ class ApplicationConfiguration(
     @Bean
     fun createShortUrlsFromCsvUseCase() = CreateShortUrlsFromCsvUseCaseImpl(fileStorage, createShortUrlUseCase())
 }
+
+

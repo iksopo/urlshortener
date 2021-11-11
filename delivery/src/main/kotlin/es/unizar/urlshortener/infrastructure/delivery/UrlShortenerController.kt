@@ -17,15 +17,13 @@ import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.hateoas.server.mvc.linkTo
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.io.IOException
@@ -35,6 +33,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import javax.servlet.http.HttpServletRequest
 import org.springframework.ui.Model;
+import org.springframework.web.client.RestTemplate
 
 
 /**
@@ -58,10 +57,11 @@ interface UrlShortenerController {
 
 }
 
+
 const val PATTERN = "yyyy-MM-dd HH:mm:ss"
 @Value("\${google.API.value}")
 const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
-const val FINDURL : String = "safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
+const val FINDURL : String = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
 const val CLIENTNAME : String = "URIShortenerTestApp"
 const val CLIENTVERSION : String = "0.1"
 
@@ -98,6 +98,10 @@ class UrlShortenerControllerImpl(
     val createShortUrlUseCase: CreateShortUrlUseCase
 ) : UrlShortenerController {
 
+
+    @Autowired
+    lateinit var restTemplate: RestTemplate
+
     @GetMapping("/tiny-{id:.*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
         redirectUseCase.redirectTo(id).let {
@@ -123,19 +127,24 @@ class UrlShortenerControllerImpl(
             h.location = url
 
             //Check URL is safe
+            //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
             val mapper = jacksonObjectMapper()
 
             val safeRequest = ThreatMatchesFindRequest(
                 ClientInfo(CLIENTNAME, CLIENTVERSION),
                 ThreatInfo(
-                    listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION),
-                    listOf(PlatformType.ALL_PLATFORMS),
+                    listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION,ThreatType.UNWANTED_SOFTWARE),
+                    listOf(PlatformType.WINDOWS),
                     listOf(ThreatEntryType.URL),
                     listOf(ThreatEntry(data.url,ThreatEntryRequestType.URL))
                 )
             )
             val serialized = mapper.writeValueAsString(safeRequest)
+            val httpResponse = restTemplate.postForObject(URI(FINDURL),HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
             println(serialized);
+            val serialized2 = mapper.writeValueAsString(httpResponse)
+            println(serialized2);
+
 
             val response = ShortUrlDataOut(
                 url = url,
@@ -147,3 +156,14 @@ class UrlShortenerControllerImpl(
         }
 }
 
+@Configuration
+class RestTemplateConfig {
+
+    /**
+     * Build a RestTemplate Bean with the default configuration
+     */
+    @Bean
+    fun restTemplate():RestTemplate {
+        return RestTemplateBuilder().build()
+    }
+}
