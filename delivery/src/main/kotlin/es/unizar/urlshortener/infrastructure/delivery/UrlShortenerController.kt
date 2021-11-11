@@ -16,6 +16,7 @@ import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
@@ -58,6 +59,13 @@ interface UrlShortenerController {
 }
 
 const val PATTERN = "yyyy-MM-dd HH:mm:ss"
+@Value("\${google.API.value}")
+const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
+const val FINDURL : String = "safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
+const val CLIENTNAME : String = "URIShortenerTestApp"
+const val CLIENTVERSION : String = "0.1"
+
+
 /**
  * Data required to create a short url.
  */
@@ -116,13 +124,14 @@ class UrlShortenerControllerImpl(
 
             //Check URL is safe
             val mapper = jacksonObjectMapper()
+
             val safeRequest = ThreatMatchesFindRequest(
-                ClientInfo("testId","testVesrion"),
+                ClientInfo(CLIENTNAME, CLIENTVERSION),
                 ThreatInfo(
                     listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION),
                     listOf(PlatformType.ALL_PLATFORMS),
                     listOf(ThreatEntryType.URL),
-                    listOf(ThreatEntry("blablaURIExample",ThreatEntryRequestType.URL))
+                    listOf(ThreatEntry(data.url,ThreatEntryRequestType.URL))
                 )
             )
             val serialized = mapper.writeValueAsString(safeRequest)
