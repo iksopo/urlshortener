@@ -141,14 +141,11 @@ class UrlShortenerControllerImpl(
             )
             val serialized = mapper.writeValueAsString(safeRequest)
             val httpResponse = restTemplate.postForObject(URI(FINDURL),HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
-            println(serialized);
-            val serialized2 = mapper.writeValueAsString(httpResponse)
-            println(serialized2);
             if(!httpResponse?.matches.isNullOrEmpty()){
                 val response = ShortUrlDataOut(
                     url = url,
                     properties = mapOf(
-                        "Unsafe" to it.properties.safe
+                        "Unsafe" to it.properties.safe,
                     )
                 )
                 response.properties.entries
