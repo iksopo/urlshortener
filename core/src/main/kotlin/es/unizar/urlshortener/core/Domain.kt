@@ -39,7 +39,9 @@ data class ShortUrlProperties(
     val sponsor: String? = null,
     val safe: Boolean = true,
     val owner: String? = null,
-    val country: String? = null
+    val country: String? = null,
+    var leftUses: Int? = null,
+    val expiration: Date? = null
 )
 
 /**
@@ -51,4 +53,12 @@ data class ClickProperties(
     val browser: String? = null,
     val platform: String? = null,
     val country: String? = null
+)
+
+/**
+ * A [FileAndShortUrl] is the data about a file that contains a list of urls, and the list of the [ShortUrl] associated with them.
+ */
+data class FileAndShortUrl(
+    val filename: String = "",
+    val urls: List<Pair<ShortUrl, String?>> = ArrayList()
 )

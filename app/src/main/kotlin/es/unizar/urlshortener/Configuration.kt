@@ -1,6 +1,8 @@
 package es.unizar.urlshortener
 
+import es.unizar.urlshortener.core.FileStorage
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCaseImpl
+import es.unizar.urlshortener.core.usecases.CreateShortUrlsFromCsvUseCaseImpl
 import es.unizar.urlshortener.core.usecases.LogClickUseCaseImpl
 import es.unizar.urlshortener.core.usecases.RedirectUseCaseImpl
 import es.unizar.urlshortener.infrastructure.delivery.HashServiceImpl
@@ -21,8 +23,15 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class ApplicationConfiguration(
     @Autowired val shortUrlEntityRepository: ShortUrlEntityRepository,
-    @Autowired val clickEntityRepository: ClickEntityRepository
+    @Autowired val clickEntityRepository: ClickEntityRepository,
+    @Autowired var fileStorage: FileStorage
 ) {
+    @Bean
+    fun cleanFileStorage() {
+        fileStorage.deleteAll()
+        fileStorage.init()
+    }
+
     @Bean
     fun clickRepositoryService() = ClickRepositoryServiceImpl(clickEntityRepository)
 
@@ -43,4 +52,7 @@ class ApplicationConfiguration(
 
     @Bean
     fun createShortUrlUseCase() = CreateShortUrlUseCaseImpl(shortUrlRepositoryService(), validatorService(), hashService())
+
+    @Bean
+    fun createShortUrlsFromCsvUseCase() = CreateShortUrlsFromCsvUseCaseImpl(fileStorage, createShortUrlUseCase())
 }
