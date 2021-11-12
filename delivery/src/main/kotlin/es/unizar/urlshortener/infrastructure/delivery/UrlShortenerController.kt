@@ -10,23 +10,18 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import es.unizar.urlshortener.core.ClickProperties
-import es.unizar.urlshortener.core.FileStorage
-import es.unizar.urlshortener.core.ShortUrl
-import es.unizar.urlshortener.core.ShortUrlProperties
-import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
-import es.unizar.urlshortener.core.usecases.LogClickUseCase
-import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import es.unizar.urlshortener.core.*
+import es.unizar.urlshortener.core.usecases.*
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.hateoas.server.mvc.linkTo
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.io.IOException
@@ -36,6 +31,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import javax.servlet.http.HttpServletRequest
 import org.springframework.ui.Model;
+import org.springframework.web.client.RestTemplate
 
 
 /**
@@ -59,7 +55,15 @@ interface UrlShortenerController {
 
 }
 
+
 const val PATTERN = "yyyy-MM-dd HH:mm:ss"
+@Value("\${google.API.value}")
+const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
+const val FINDURL : String = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
+const val CLIENTNAME : String = "URIShortenerTestApp"
+const val CLIENTVERSION : String = "0.1"
+
+
 /**
  * Data required to create a short url.
  */
@@ -92,11 +96,26 @@ class UrlShortenerControllerImpl(
     val createShortUrlUseCase: CreateShortUrlUseCase
 ) : UrlShortenerController {
 
+
+    @Autowired
+    lateinit var validateURIUseCase: ValidateURIUseCase
+
     @GetMapping("/tiny-{id:.*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
         redirectUseCase.redirectTo(id).let {
             logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
+
             val h = HttpHeaders()
+
+            //Check URL is valid
+            val validationResponse = validateURIUseCase.ValidateURI(it.target)
+            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
+                return ResponseEntity(h, HttpStatus.FORBIDDEN)
+            }
+            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
+                return ResponseEntity(h, HttpStatus.NOT_FOUND)
+            }
+
             h.location = URI.create(it.target)
             ResponseEntity<Void>(h, HttpStatus.valueOf(it.mode))
         }
@@ -115,6 +134,31 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
+
+            //Check URL is valid
+            //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
+            val validationResponse = validateURIUseCase.ValidateURI(data.url)
+
+            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
+                val response = ShortUrlDataOut(
+                    url = url,
+                    properties = mapOf(
+                        "Unsafe" to it.properties.safe,
+                    )
+                )
+                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.FORBIDDEN)
+            }
+            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
+                val response = ShortUrlDataOut(
+                    url = url,
+                    properties = mapOf(
+                        "Not Reachable" to it.properties.safe,
+                    )
+                )
+                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.NOT_FOUND)
+            }
+
+
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
@@ -125,3 +169,14 @@ class UrlShortenerControllerImpl(
         }
 }
 
+@Configuration
+class RestTemplateConfig {
+
+    /**
+     * Build a RestTemplate Bean with the default configuration
+     */
+    @Bean
+    fun restTemplate():RestTemplate {
+        return RestTemplateBuilder().build()
+    }
+}
