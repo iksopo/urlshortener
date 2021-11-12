@@ -104,7 +104,18 @@ class UrlShortenerControllerImpl(
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
         redirectUseCase.redirectTo(id).let {
             logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
+
             val h = HttpHeaders()
+
+            //Check URL is valid
+            val validationResponse = validateURIUseCase.ValidateURI(it.target)
+            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
+                return ResponseEntity(h, HttpStatus.FORBIDDEN)
+            }
+            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
+                return ResponseEntity(h, HttpStatus.NOT_FOUND)
+            }
+
             h.location = URI.create(it.target)
             ResponseEntity<Void>(h, HttpStatus.valueOf(it.mode))
         }
@@ -124,7 +135,7 @@ class UrlShortenerControllerImpl(
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
 
-            //Check URL is safe
+            //Check URL is valid
             //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
             val validationResponse = validateURIUseCase.ValidateURI(data.url)
 
