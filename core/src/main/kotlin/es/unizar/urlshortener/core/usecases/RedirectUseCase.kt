@@ -23,10 +23,6 @@ class RedirectUseCaseImpl(
 ) : RedirectUseCase {
     override fun redirectTo(key: String): Redirection =
         shortUrlRepository.findByKey(key)?.let {
-            shortUrlRepository.updateLeftUses(it)
-            if (!shortUrlRepository.checkNotExpired(it)){
-                throw RedirectionNotFound(key)
-            }
             return it.redirection
         } ?: throw RedirectionNotFound(key)
 }

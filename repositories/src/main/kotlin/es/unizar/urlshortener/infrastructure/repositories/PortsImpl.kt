@@ -22,26 +22,15 @@ class ShortUrlRepositoryServiceImpl(
     private val shortUrlEntityRepository: ShortUrlEntityRepository
 ) : ShortUrlRepositoryService {
     override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findByHash(id)?.toDomain()
-    override fun updateLeftUses(su : ShortUrl) {
-        su.properties.leftUses?.let {
-            if (it == 1) {
-                shortUrlEntityRepository.deleteByHash(su.hash)
-            } else {
-                su.properties.leftUses = it -1
-                save(su)
-            }
-        }
-    }
-    override fun checkNotExpired(su : ShortUrl) : Boolean {
-        su.properties.expiration?.let {
-            val now = OffsetDateTime.now();
-            if (now.compareTo(it.toInstant().atOffset(ZoneOffset.UTC)) > 0) {
-                shortUrlEntityRepository.deleteByHash(su.hash)
-                return false
-            } else {
-                return true
-            }
-        } ?: return true
-    }
+    override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
+}
+
+/**
+ * Implementation of the port [ShortUrlRepositoryService] updating expiration.
+ */
+class ShortUrlRepositoryServiceImplUpdater(
+    private val shortUrlEntityRepository: ShortUrlEntityRepository
+) : ShortUrlRepositoryService {
+    override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findUpdatingByHash(id)?.toDomain()
     override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
 }

@@ -4,10 +4,7 @@ import es.unizar.urlshortener.core.FileStorage
 import es.unizar.urlshortener.core.usecases.*
 import es.unizar.urlshortener.infrastructure.delivery.HashServiceImpl
 import es.unizar.urlshortener.infrastructure.delivery.ValidatorServiceImpl
-import es.unizar.urlshortener.infrastructure.repositories.ClickEntityRepository
-import es.unizar.urlshortener.infrastructure.repositories.ClickRepositoryServiceImpl
-import es.unizar.urlshortener.infrastructure.repositories.ShortUrlEntityRepository
-import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServiceImpl
+import es.unizar.urlshortener.infrastructure.repositories.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
@@ -34,7 +31,7 @@ class ApplicationConfiguration(
     fun clickRepositoryService() = ClickRepositoryServiceImpl(clickEntityRepository)
 
     @Bean
-    fun shortUrlRepositoryService() = ShortUrlRepositoryServiceImpl(shortUrlEntityRepository)
+    fun shortUrlRepositoryService() = ShortUrlRepositoryServiceImplUpdater(shortUrlEntityRepository)
 
     @Bean
     fun validatorService() = ValidatorServiceImpl()

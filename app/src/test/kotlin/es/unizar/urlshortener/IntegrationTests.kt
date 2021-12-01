@@ -166,7 +166,6 @@ class HttpRequestTest {
         }
         expiration?.let {
             data["expiration"] = expiration.format(DateTimeFormatter.ofPattern(PATTERN))
-            println(data["expiration"])
         }
         return restTemplate.postForEntity(
             "http://localhost:$port/api/link",
