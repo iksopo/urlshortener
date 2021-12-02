@@ -29,7 +29,7 @@ class CsvReceiverController(
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
-    fun uploadCsv(@RequestParam("uploadfile") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
+    fun uploadCsv(@RequestParam("file") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
             val newLines = ArrayList<String>()
             var isFirst = true

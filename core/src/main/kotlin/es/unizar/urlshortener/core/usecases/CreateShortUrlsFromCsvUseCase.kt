@@ -1,6 +1,8 @@
 package es.unizar.urlshortener.core.usecases
 
 import es.unizar.urlshortener.core.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.springframework.web.multipart.MultipartFile
 
 /**
@@ -29,20 +31,24 @@ class CreateShortUrlsFromCsvUseCaseImpl(
         val newName = "${fileStorage.generateName()}.csv"
         fileStorage.store(file, newName)
         val lines = fileStorage.readLines(newName)
-        for (line in lines) {
-            try {
-                createShortUrlUseCase.create(
-                    url = line,
-                    data = ShortUrlProperties(
-                        ip = remoteAddr
-                    )
-                ).let {
-                    shortUrls.add(Pair(it, null))
+        runBlocking {
+            for (line in lines) {
+                launch {
+                    try {
+                        createShortUrlUseCase.create(
+                            url = line,
+                            data = ShortUrlProperties(
+                                ip = remoteAddr
+                            )
+                        ).let {
+                            shortUrls.add(Pair(it, null))
+                        }
+                    } catch (ex: InvalidUrlException) {
+                        shortUrls.add(Pair(
+                            ShortUrl(hash = "", redirection = Redirection(line),
+                                properties = ShortUrlProperties(safe = false, ip = remoteAddr)), ex.message))
+                    }
                 }
-            } catch (ex: InvalidUrlException) {
-                shortUrls.add(Pair(
-                    ShortUrl(hash = "", redirection = Redirection(line),
-                        properties = ShortUrlProperties(safe = false, ip = remoteAddr)), ex.message))
             }
         }
         return FileAndShortUrl(filename = newName, urls = shortUrls)
