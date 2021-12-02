@@ -29,8 +29,10 @@ class ShortUrlRepositoryServiceImpl(
  * Implementation of the port [ShortUrlRepositoryService] updating expiration.
  */
 class ShortUrlRepositoryServiceImplUpdater(
-    private val shortUrlEntityRepository: ShortUrlEntityRepository
+    private val shortUrlEntityRepository: ShortUrlEntityRepository,
+    private val customShortUrlRepository: CustomShortUrlRepository
 ) : ShortUrlRepositoryService {
-    override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findUpdatingByHash(id)?.toDomain()
+    override fun findByKey(id: String): ShortUrl? = customShortUrlRepository.findUpdatingByHash(id)?.toDomain()
+
     override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
 }

@@ -30,8 +30,11 @@ class ApplicationConfiguration(
     @Bean
     fun clickRepositoryService() = ClickRepositoryServiceImpl(clickEntityRepository)
 
+    //@Bean
+    //fun customShortUrlRepositoryService() = CustomShortUrlRepositoryImpl(shortUrlEntityRepository)
+
     @Bean
-    fun shortUrlRepositoryService() = ShortUrlRepositoryServiceImplUpdater(shortUrlEntityRepository)
+    fun shortUrlRepositoryService() = ShortUrlRepositoryServiceImplUpdater(shortUrlEntityRepository, CustomShortUrlRepositoryImpl(shortUrlEntityRepository))
 
     @Bean
     fun validatorService() = ValidatorServiceImpl()
@@ -52,7 +55,7 @@ class ApplicationConfiguration(
     fun createShortUrlsFromCsvUseCase() = CreateShortUrlsFromCsvUseCaseImpl(fileStorage, createShortUrlUseCase())
 
     @Bean
-    fun ValidateURIUseCase() = ValidateURIUseCaseImpl()
+    fun validateURIUseCase() = ValidateURIUseCaseImpl()
 }
 
 
