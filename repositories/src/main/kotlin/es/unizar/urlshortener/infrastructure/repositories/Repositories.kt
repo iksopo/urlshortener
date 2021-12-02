@@ -28,8 +28,7 @@ interface CustomShortUrlRepository {
     fun findUpdatingByHash(hash: String) : ShortUrlEntity?
 }
 
-
-class CustomShortUrlRepositoryImpl(
+open class CustomShortUrlRepositoryImpl(
     private val shortUrlEntityRepository : ShortUrlEntityRepository
 ) : CustomShortUrlRepository {
     @Transactional
