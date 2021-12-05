@@ -15,7 +15,8 @@ $(document).ready(
                 if ( document.getElementById("timeCheckBox").checked ) {
                    let currentTime = new Date()
                    let minutes = parseInt(document.getElementById("expiration").value)
-                   formData.expiration = new Date(currentTime.getTime() + minutes * 60000)
+                   let expirationDate = new Date(currentTime.getTime() + minutes * 60000)
+                   formData.expiration = expirationDate.toGMTString()
                 }
                 console.log("fData", formData)
 
