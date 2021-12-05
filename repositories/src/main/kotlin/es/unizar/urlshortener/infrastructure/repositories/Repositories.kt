@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Transactional
 import javax.persistence.PersistenceContext
+import java.util.Date
 
 /**
  * Specification of the repository of [ShortUrlEntity].
@@ -15,8 +16,12 @@ import javax.persistence.PersistenceContext
  */
 interface ShortUrlEntityRepository : JpaRepository<ShortUrlEntity, String> {
     fun findByHash(hash: String): ShortUrlEntity?
+
     @Transactional
     fun deleteByHash(hash: String)
+
+    @Transactional
+    fun deleteByExpirationBefore(date: Date)
 }
 
 /**
