@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.*
 
 /**
  * Implementation of the port [ClickRepositoryService].
@@ -43,5 +44,12 @@ class ShortUrlRepositoryServiceImpl(
             }
         } ?: return true
     }
+
+    override fun deleteExpireds() {
+        val now = OffsetDateTime.now()
+        println("Deleting all expired dates... (before: " + now + ")")
+        shortUrlEntityRepository.deleteByExpirationBefore(Date.from(now.toInstant()))
+    }
+
     override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
 }
