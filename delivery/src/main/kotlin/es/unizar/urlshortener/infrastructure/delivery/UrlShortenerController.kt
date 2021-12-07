@@ -55,8 +55,6 @@ interface UrlShortenerController {
 
 }
 
-
-const val PATTERN = "yyyy-MM-dd HH:mm:ss"
 @Value("\${google.API.value}")
 const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
 const val FINDURL : String = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
@@ -70,7 +68,6 @@ const val CLIENTVERSION : String = "0.1"
 data class ShortUrlDataIn(
     val url: String,
     val leftUses: Int? = null,
-    @DateTimeFormat(pattern = PATTERN)
     val expiration: Date? = null,
     val sponsor: String? = null
 )

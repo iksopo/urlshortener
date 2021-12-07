@@ -1,6 +1,5 @@
 package es.unizar.urlshortener
 
-import es.unizar.urlshortener.infrastructure.delivery.PATTERN
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -165,7 +164,7 @@ class HttpRequestTest {
             data["leftUses"] = it.toString()
         }
         expiration?.let {
-            data["expiration"] = expiration.format(DateTimeFormatter.ofPattern(PATTERN))
+            data["expiration"] = expiration.format(DateTimeFormatter.RFC_1123_DATE_TIME)
             println(data["expiration"])
         }
         return restTemplate.postForEntity(

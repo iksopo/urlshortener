@@ -18,12 +18,31 @@
             <h1>URL Shortener</h1>
             <p class="lead">A front-end example page for the project</p>
             <br>
-            <form class="col-lg-12" role="form" id="shortener" action="">
+            <form class="col-lg-25" role="form" id="shortener" action="">
                 <div class="input-group input-group-lg col-sm-offset-4 col-sm-4">
-                    <input type="text" class="center-block form-control input-lg"
-                           title="Enter a URL" placeholder="Enter a URL" name="url">
-                    <span class="input-group-btn"><button
-                            class="btn btn-lg btn-primary" type="submit">Short me!</button></span>
+                    <div class="input-group input-group-lg row-sm-offset-4 row-sm-4">
+                        <input type="text" class="center-block form-control input-lg"
+                               title="Enter a URL" placeholder="Enter a URL" name="url"
+                               id = "url">
+                        <br />
+                        <input type="number" class="center-block form-control input-lg"
+                               title="Number of uses" placeholder="Number of uses"
+                               name="leftUses" id="leftUses" min="1">
+                        <input type="checkbox" id="numberCheckBox" value="second_checkbox">
+                        <label for="numberCheckBox">Enable expiration by number of uses</label>
+                    </div>
+
+                    <div class="input-group input-group-lg row-sm-offset-4 row-sm-4">
+                        <input type="text" class="center-block form-control input-lg"
+                               title="Expiration time left" placeholder="Expiration date"
+                               name="expiration" id="expiration">
+                        <input type="checkbox" id="timeCheckBox" value="second_checkbox">
+                        <label for="timeCheckBox">Enable expiration by time left</label>
+                    </div>
+
+                    <button class="btn btn-lg btn-primary" type="submit">
+                        Short me!
+                    </button>
                 </div>
             </form>
         </div>
