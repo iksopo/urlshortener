@@ -46,10 +46,9 @@ project(":core") {
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
     }
-
-    //val jar: Jar by tasks
-    val bootJar: BootJar by tasks
-    bootJar.enabled = false
+    tasks.getByName<BootJar>("bootJar") {
+        enabled = false
+    }
 }
 
 project(":repositories") {
