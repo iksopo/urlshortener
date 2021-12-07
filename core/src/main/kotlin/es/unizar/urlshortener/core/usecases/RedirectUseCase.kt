@@ -3,7 +3,10 @@ package es.unizar.urlshortener.core.usecases
 import es.unizar.urlshortener.core.Redirection
 import es.unizar.urlshortener.core.RedirectionNotFound
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
-import java.time.OffsetDateTime
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.transaction.annotation.Transactional
+import javax.persistence.LockModeType
 
 /**
  * Given a key returns a [Redirection] that contains a [URI target][Redirection.target]
@@ -18,9 +21,11 @@ interface RedirectUseCase {
 /**
  * Implementation of [RedirectUseCase].
  */
-class RedirectUseCaseImpl(
+open class RedirectUseCaseImpl(
     private val shortUrlRepository: ShortUrlRepositoryService
 ) : RedirectUseCase {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Transactional
     override fun redirectTo(key: String): Redirection =
         shortUrlRepository.findByKey(key)?.let {
             shortUrlRepository.updateLeftUses(it)

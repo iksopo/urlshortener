@@ -1,6 +1,8 @@
 package es.unizar.urlshortener
 
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -152,6 +154,29 @@ class HttpRequestTest {
         Thread.sleep(8_000)
         val response3 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    }
+
+    @Test
+    fun `creates an url with a lot of uses and tries to generate concurrency issues`() {
+        val numberUses = 500
+        val sUrl = shortUrl("http://example.com/", numberUses, null)
+        println(sUrl)
+        val target = sUrl.headers.location
+        require(target != null)
+        var redirections = 0
+        runBlocking {
+            repeat(numberUses + 1){
+                launch {
+                    val response = restTemplate.getForEntity(target, String::class.java)
+                    if (response.statusCode == HttpStatus.TEMPORARY_REDIRECT){
+                        synchronized(redirections){
+                            redirections++
+                        }
+                    }
+                }
+            }
+        }
+        assertThat(redirections).isEqualTo(numberUses)
     }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {

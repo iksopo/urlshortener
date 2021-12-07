@@ -45,6 +45,7 @@ project(":core") {
         "implementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
+        "implementation"("org.springframework.boot:spring-boot-starter-data-jpa")
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -107,5 +108,6 @@ project(":app") {
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
         "testImplementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "testImplementation"("org.apache.httpcomponents:httpclient")
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
     }
 }
