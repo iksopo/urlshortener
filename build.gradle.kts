@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
+import org.gradle.api.tasks.bundling.Jar
+
 
 plugins {
     id("org.springframework.boot") version "2.5.5" apply false
@@ -44,6 +46,10 @@ project(":core") {
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
     }
+
+    //val jar: Jar by tasks
+    val bootJar: BootJar by tasks
+    bootJar.enabled = false
 }
 
 project(":repositories") {
@@ -89,7 +95,7 @@ project(":app") {
         "implementation"(project(":delivery"))
         "implementation"(project(":repositories"))
         "implementation"("org.springframework.boot:spring-boot-starter")
-        "implementation"( "org.webjars:bootstrap:3.3.5")
+        "implementation"("org.webjars:bootstrap:3.3.5")
         "implementation"("org.webjars:jquery:2.1.4")
 
         "runtimeOnly"("org.hsqldb:hsqldb")
