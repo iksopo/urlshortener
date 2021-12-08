@@ -139,7 +139,7 @@ class HttpRequestTest {
 
     @Test
     fun `creates an url that expires in 5 seconds`() {
-        val sUrl = shortUrl("http://example.com/", null, OffsetDateTime.now().plusSeconds(7))
+        val sUrl = shortUrl("http://example.com/", null, OffsetDateTime.now().plusSeconds(5))
         println(sUrl)
         val target = sUrl.headers.location
         require(target != null)
@@ -151,7 +151,7 @@ class HttpRequestTest {
         assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response2.headers.location).isEqualTo(URI.create("http://example.com/"))
 
-        Thread.sleep(8_000)
+        Thread.sleep(15_000)
         val response3 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
