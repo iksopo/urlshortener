@@ -4,6 +4,7 @@ import es.unizar.urlshortener.core.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.springframework.web.multipart.MultipartFile
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Given a file creates a short URL for each url in the file
@@ -12,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile
  * When the url is created optional data may be added.
  */
 interface CreateShortUrlsFromCsvUseCase {
-    fun create(file: MultipartFile, remoteAddr: String): FileAndShortUrl
+    fun create(file: MultipartFile, remoteAddr: String, listener: ProgressListener): FileAndShortUrl
 }
 
 /**
@@ -22,15 +23,19 @@ class CreateShortUrlsFromCsvUseCaseImpl(
     private var fileStorage: FileStorage,
     private val createShortUrlUseCase: CreateShortUrlUseCase
 ) : CreateShortUrlsFromCsvUseCase {
-    override fun create(file: MultipartFile, remoteAddr: String): FileAndShortUrl {
+    override fun create(file: MultipartFile, remoteAddr: String, listener: ProgressListener): FileAndShortUrl {
         val nameSplitByPoint = file.originalFilename?.split(".")
         if (nameSplitByPoint == null || !nameSplitByPoint[nameSplitByPoint.size-1].equals("csv", ignoreCase = true)) {
             throw InvalidTypeOfFile(file.originalFilename)
         }
+        val counter = AtomicInteger()
+        listener.onProgress(counter.get())
         val shortUrls = ArrayList<Pair<ShortUrl, String?>>()
         val newName = "${fileStorage.generateName()}.csv"
+        listener.setFilename(newName)
         fileStorage.store(file, newName)
         val lines = fileStorage.readLines(newName)
+        val numUrls = lines.size
         runBlocking {
             for (line in lines) {
                 launch {
@@ -48,9 +53,12 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                             ShortUrl(hash = "", redirection = Redirection(line),
                                 properties = ShortUrlProperties(safe = false, ip = remoteAddr)), ex.message))
                     }
+                    val progress = counter.incrementAndGet() * 100 / numUrls
+                    listener.onProgress(progress)
                 }
             }
         }
+        listener.onCompletion()
         return FileAndShortUrl(filename = newName, urls = shortUrls)
     }
 }
