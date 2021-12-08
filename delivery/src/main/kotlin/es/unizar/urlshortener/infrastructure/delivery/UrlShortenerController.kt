@@ -1,16 +1,5 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.*
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,21 +7,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.hateoas.server.mvc.linkTo
 import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
-import java.io.IOException
 import java.net.URI
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Date
 import javax.servlet.http.HttpServletRequest
-import org.springframework.ui.Model;
 import org.springframework.web.client.RestTemplate
-
+import javax.validation.constraints.Min
 
 /**
  * The specification of the controller.
@@ -67,7 +49,10 @@ const val CLIENTVERSION : String = "0.1"
  */
 data class ShortUrlDataIn(
     val url: String,
+
+    @Min(value=1, message="Number of uses must be greater or equal than 1.")
     val leftUses: Int? = null,
+
     val expiration: Date? = null,
     val sponsor: String? = null
 )

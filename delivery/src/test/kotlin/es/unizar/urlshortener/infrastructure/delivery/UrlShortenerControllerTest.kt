@@ -95,4 +95,18 @@ class UrlShortenerControllerTest {
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.statusCode").value(400))
     }
+
+    @Test
+    fun `creates returns bad request if number of uses is incorrect`() {
+        given(createShortUrlUseCase.create(
+            url = "ftp://example.com/",
+            data = ShortUrlProperties(ip = "127.0.0.1")
+        )).willAnswer { throw InvalidUrlException("ftp://example.com/") }
+
+        mockMvc.perform(post("/api/link")
+            .param("url", "ftp://example.com/")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.statusCode").value(400))
+    }
 }

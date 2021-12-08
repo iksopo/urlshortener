@@ -80,6 +80,8 @@ project(":delivery") {
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
         "implementation"("org.springframework.boot:spring-boot-starter-websocket")
+        "implementation"("javax.validation:validation-api")
+
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false

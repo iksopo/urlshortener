@@ -1,5 +1,7 @@
 package es.unizar.urlshortener
 
+import es.unizar.urlshortener.core.InvalidUrlException
+import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -8,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.BDDMockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
@@ -18,6 +21,8 @@ import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.jdbc.JdbcTestUtils
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
@@ -177,6 +182,15 @@ class HttpRequestTest {
             }
         }
         assertThat(redirections).isEqualTo(numberUses)
+    }
+
+    @Test
+    fun `shortener returns bad request if number of uses is incorrect`() {
+        val response = shortUrl("http://example.com/", 0, null)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+
+        val response2 = shortUrl("http://example.com/", -2, null)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
