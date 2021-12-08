@@ -79,7 +79,9 @@ project(":delivery") {
 
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
-        "implementation"("org.springframework.boot:spring-boot-starter-websocket")
+
+        "implementation"("org.springframework.boot:spring-boot-starter-actuator")
+        "implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -109,5 +111,9 @@ project(":app") {
         "testImplementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "testImplementation"("org.apache.httpcomponents:httpclient")
         "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
+
+        "implementation"("org.springframework.boot:spring-boot-starter-actuator")
+        "implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
+        "implementation"("org.springframework.boot:spring-boot-starter-aop")
     }
 }
