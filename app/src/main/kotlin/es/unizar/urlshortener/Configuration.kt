@@ -54,9 +54,6 @@ class ApplicationConfiguration(
     fun createShortUrlsFromCsvUseCase() = CreateShortUrlsFromCsvUseCaseImpl(fileStorage, createShortUrlUseCase())
 
     @Bean
-    fun createShortUrlsFromCsvUseCase2() = CreateShortUrlsFromCsvUseCaseImpl(fileStorage, createShortUrlUseCase())
-
-    @Bean
     fun ValidateURIUseCase() = ValidateURIUseCaseImpl()
 }
 

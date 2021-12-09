@@ -7,12 +7,10 @@ import java.io.IOException
 interface ProgressListener {
     fun onProgress(value: Int)
     fun onCompletion()
-    fun setFilename(newFilename: String)
 }
 
-class SseEmitterProgressListener(private val sseEmitters: Collection<SseEmitter>, private var filename: String) : ProgressListener {
+class SseEmitterProgressListener(private val sseEmitters: Collection<SseEmitter>) : ProgressListener {
     override fun onProgress(value: Int) {
-        println("progress: $value")
         val html = """
             <div id="progress-container" class="progress-container">
                 <div class="progress-bar" style="width:$value%"></div>
@@ -22,18 +20,10 @@ class SseEmitterProgressListener(private val sseEmitters: Collection<SseEmitter>
     }
 
     override fun onCompletion() {
-       val html = """
-            <form method="post" action="/csv-$filename" style="display:inline">
-              <button type="submit">
-                Download new file
-              </button>
-            </form>
+        val html = """
+            <p>Your file was processed, download will start in short...</p>
         """.trimIndent()
         sendToAllClients(html)
-    }
-
-    override fun setFilename(newFilename: String) {
-        filename = newFilename
     }
 
     private fun sendToAllClients(html: String) {

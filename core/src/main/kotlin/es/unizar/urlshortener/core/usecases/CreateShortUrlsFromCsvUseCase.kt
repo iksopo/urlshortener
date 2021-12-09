@@ -3,6 +3,8 @@ package es.unizar.urlshortener.core.usecases
 import es.unizar.urlshortener.core.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.springframework.web.multipart.MultipartFile
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -31,8 +33,8 @@ class CreateShortUrlsFromCsvUseCaseImpl(
         val counter = AtomicInteger()
         listener.onProgress(counter.get())
         val shortUrls = ArrayList<Pair<ShortUrl, String?>>()
+        val mutex = Mutex()
         val newName = "${fileStorage.generateName()}.csv"
-        listener.setFilename(newName)
         fileStorage.store(file, newName)
         val lines = fileStorage.readLines(newName)
         val numUrls = lines.size
@@ -46,12 +48,12 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                 ip = remoteAddr
                             )
                         ).let {
-                            shortUrls.add(Pair(it, null))
+                            mutex.withLock { shortUrls.add(Pair(it, null)) }
                         }
                     } catch (ex: InvalidUrlException) {
-                        shortUrls.add(Pair(
-                            ShortUrl(hash = "", redirection = Redirection(line),
-                                properties = ShortUrlProperties(safe = false, ip = remoteAddr)), ex.message))
+                        mutex.withLock { shortUrls.add(Pair(ShortUrl(hash = "", redirection = Redirection(line),
+                                properties = ShortUrlProperties(safe = false, ip = remoteAddr)), ex.message)) }
+
                     }
                     val progress = counter.incrementAndGet() * 100 / numUrls
                     listener.onProgress(progress)

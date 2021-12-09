@@ -32,11 +32,10 @@ class CsvReceiverController(
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/csv2", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
+    @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
     fun upload2(@RequestParam("file") file: MultipartFile, @RequestParam("uuid") uuid:String,
-                model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
-        println("csv2")
-        println(uuid)
+                model: Model, request: HttpServletRequest, response: HttpServletResponse) {
+        model.addAttribute("uuid", uuid)
         val listener = sseRepository.createProgressListener(uuid)
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr, listener).let {
             val newLines = ArrayList<String>()
@@ -49,14 +48,8 @@ class CsvReceiverController(
                 val url = linkTo<UrlShortenerControllerImpl> { redirectTo(shortUrl.hash, request) }.toUri()
                 if (errorMsg != null) {
                     newLines.add("$target,,$errorMsg")
-                    if (i == 0) {
-                        model.addAttribute("firstUrlError", "$errorMsg")
-                    }
                 } else {
                     newLines.add("$target,$url,")
-                    if (i == 0) {
-                        model.addAttribute("firstUrl", "$url")
-                    }
                 }
                 if (i == 0) {
                     response.addHeader("Location", "$url")
@@ -64,70 +57,13 @@ class CsvReceiverController(
             }
 
             fileStorage.overwriteFile(it.filename, newLines)
-            model.addAttribute("message", "Your file ${file.originalFilename} has been successfully processed")
-            model.addAttribute("file", it.filename)
+            val generatedFile = fileStorage.loadFile(it.filename)
+            response.contentType = "text/csv"
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"shortUrls.csv\"")
+            IOUtils.copy(generatedFile.inputStream, response.outputStream)
+            response.outputStream.close()
+            generatedFile.inputStream.close()
+            fileStorage.deleteFile(it.filename)
         }
-        model.addAttribute("uuid", uuid)
-        return "uploadform"
-    }
-/*
-    @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
-    fun uploadCsv(@RequestParam("file") file: MultipartFile, model: Model, request: HttpServletRequest, response: HttpServletResponse): String {
-        createShortUrlsFromCsvUseCase.create(file, request.remoteAddr).let {
-            val newLines = ArrayList<String>()
-            var isFirst = true
-            for (pair in it.urls) {
-                val shortUrl = pair.first
-                val errorMsg = pair.second
-                val target = shortUrl.redirection.target
-                val url = linkTo<UrlShortenerControllerImpl> { redirectTo(shortUrl.hash, request) }.toUri()
-                if (errorMsg != null) {
-                    newLines.add("$target,,$errorMsg")
-                    if (isFirst) {
-                        model.addAttribute("firstUrlError", "$errorMsg")
-                    }
-                } else {
-                    newLines.add("$target,$url,")
-                    if (isFirst) {
-                        model.addAttribute("firstUrl", "$url")
-                    }
-                }
-
-                if (isFirst) {
-                    response.addHeader("Location", "$url")
-                    isFirst = false
-                }
-            }
-
-            fileStorage.overwriteFile(it.filename, newLines)
-            model.addAttribute("message", "Your file ${file.originalFilename} has been successfully processed")
-            model.addAttribute("file", it.filename)
-
-            return "uploadform"
-        }
-    }*/
-
-    @PostMapping("/csv-{filename:.*}")
-    fun downloadFile(@PathVariable filename: String, response: HttpServletResponse)/*: ResponseEntity<Resource>*/ {
-        val file = fileStorage.loadFile(filename)
-        response.contentType = "text/csv"
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"shortUrls.csv\"")
-        IOUtils.copy(file.inputStream, response.outputStream)
-        response.outputStream.close()
-        file.inputStream.close()
-        fileStorage.deleteFile(filename)
-    }
-
-    @PostMapping("/csvshort")
-    fun downloadFile2(@RequestParam("name") filename: String, response: HttpServletResponse)/*: ResponseEntity<Resource>*/ {
-        println(filename)
-        val file = fileStorage.loadFile(filename)
-        response.contentType = "text/csv"
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"shortUrls.csv\"")
-        IOUtils.copy(file.inputStream, response.outputStream)
-        response.outputStream.close()
-        file.inputStream.close()
-        fileStorage.deleteFile(filename)
     }
 }

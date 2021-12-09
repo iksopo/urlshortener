@@ -18,7 +18,7 @@ class SseRepository {
     }
 
     fun createProgressListener(id: String): SseEmitterProgressListener {
-        return SseEmitterProgressListener(sseEmitters[id], "")
+        return SseEmitterProgressListener(sseEmitters[id])
     }
 }
 

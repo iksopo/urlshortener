@@ -13,7 +13,7 @@
 
 <body>
 <div hx-sse="" th:attr="hx-sse='connect:/progress?uuid='+${uuid}">
-  <form id="form" hx-encoding="multipart/form-data" hx-post="/csv2" hx-swap="none">
+  <form id="form" enctype="multipart/form-data" action="/csv" method="POST">
     <label class="control-label" for="file">Upload File:</label>
     <input type="file" name="file" class="form-control" placeholder="Upload File" id="file">
     <input name="uuid" th:attr="value=${uuid}" type="hidden" value="">
