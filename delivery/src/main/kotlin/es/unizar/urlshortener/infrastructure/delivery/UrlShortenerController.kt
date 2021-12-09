@@ -1,37 +1,28 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import es.unizar.urlshortener.core.*
+import es.unizar.urlshortener.core.ClickProperties
+import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.hateoas.server.mvc.linkTo
-import org.springframework.http.*
-import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
-import java.io.IOException
-import java.net.URI
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Date
-import javax.servlet.http.HttpServletRequest
-import org.springframework.ui.Model;
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.RestTemplate
+import java.net.URI
+import java.util.*
+import javax.servlet.http.HttpServletRequest
 
 
 /**
@@ -103,18 +94,22 @@ class UrlShortenerControllerImpl(
             logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
 
             val h = HttpHeaders()
+            var status = HttpStatus.valueOf(it.mode)
+
 
             //Check URL is valid
-            val validationResponse = validateURIUseCase.ValidateURI(it.target)
-            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
-                return ResponseEntity(h, HttpStatus.FORBIDDEN)
-            }
-            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
-                return ResponseEntity(h, HttpStatus.NOT_FOUND)
+            runBlocking {
+                val validationResponse = async { validateURIUseCase.ValidateURI(it.target) }
+                if (validationResponse.await() == ValidateURIUseCaseResponse.UNSAFE) {
+                    status = HttpStatus.FORBIDDEN
+                }
+                if (validationResponse.await() == ValidateURIUseCaseResponse.NOT_REACHABLE) {
+                    status = HttpStatus.NOT_FOUND
+                }
             }
 
             h.location = URI.create(it.target)
-            ResponseEntity<Void>(h, HttpStatus.valueOf(it.mode))
+            ResponseEntity<Void>(h, status)
         }
 
     @PostMapping("/api/link", consumes = [ MediaType.APPLICATION_FORM_URLENCODED_VALUE ])
@@ -131,38 +126,42 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-
-            //Check URL is valid
-            //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
-            val validationResponse = validateURIUseCase.ValidateURI(data.url)
-
-            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
-                val response = ShortUrlDataOut(
-                    url = url,
-                    properties = mapOf(
-                        "Unsafe" to it.properties.safe,
-                    )
-                )
-                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.FORBIDDEN)
-            }
-            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
-                val response = ShortUrlDataOut(
-                    url = url,
-                    properties = mapOf(
-                        "Not Reachable" to it.properties.safe,
-                    )
-                )
-                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.NOT_FOUND)
-            }
-
-
-            val response = ShortUrlDataOut(
+            var response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
                     "safe" to it.properties.safe
                 )
             )
-            ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.CREATED)
+
+            var status = HttpStatus.CREATED
+
+            //Check URL is valid
+            //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
+            runBlocking {
+                val validationResponse = async { validateURIUseCase.ValidateURI(data.url) }
+
+                if (validationResponse.await() == ValidateURIUseCaseResponse.UNSAFE) {
+                    response = ShortUrlDataOut(
+                        url = url,
+                        properties = mapOf(
+                            "Unsafe" to it.properties.safe,
+                        )
+                    )
+                    status = HttpStatus.FORBIDDEN
+                }
+                if (validationResponse.await() == ValidateURIUseCaseResponse.NOT_REACHABLE) {
+                     response = ShortUrlDataOut(
+                        url = url,
+                        properties = mapOf(
+                            "Not Reachable" to it.properties.safe,
+                        )
+                    )
+                    status = HttpStatus.NOT_FOUND
+                }
+            }
+
+            println("after asyncs")
+            return ResponseEntity<ShortUrlDataOut>(response, h, status)
         }
 }
 
