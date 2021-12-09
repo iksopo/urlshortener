@@ -4,6 +4,7 @@ import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
 import es.unizar.urlshortener.core.usecases.LogClickUseCase
 import es.unizar.urlshortener.core.usecases.RedirectUseCase
+import es.unizar.urlshortener.core.usecases.ValidateURIUseCaseImpl
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -18,11 +19,15 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import org.springframework.web.client.RestTemplate
 
 @WebMvcTest
 @ContextConfiguration(classes = [
     UrlShortenerControllerImpl::class,
-    RestResponseEntityExceptionHandler::class])
+    ValidateURIUseCaseImpl::class,
+    RestTemplate::class,
+    RestResponseEntityExceptionHandler::class
+])
 class UrlShortenerControllerTest {
 
     @Autowired
