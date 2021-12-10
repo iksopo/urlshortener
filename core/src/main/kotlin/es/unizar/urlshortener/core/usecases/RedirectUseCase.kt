@@ -3,7 +3,8 @@ package es.unizar.urlshortener.core.usecases
 import es.unizar.urlshortener.core.Redirection
 import es.unizar.urlshortener.core.RedirectionNotFound
 import es.unizar.urlshortener.core.ShortUrlRepositoryService
-import org.springframework.data.jpa.repository.JpaRepository
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.transaction.annotation.Transactional
 import javax.persistence.LockModeType
@@ -31,7 +32,9 @@ open class RedirectUseCaseImpl(
                 return it.redirection
             } else {
                 GlobalScope.launch {
-                    shortUrlRepository.deleteExpireds(key)
+                    try {
+                        shortUrlRepository.deleteByKey(key)
+                    } catch (e: Exception){}
                 }
                 throw RedirectionNotFound(key)
             }

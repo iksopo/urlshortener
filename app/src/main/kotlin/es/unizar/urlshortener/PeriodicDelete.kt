@@ -10,7 +10,7 @@ class PeriodicDelete : RouteBuilder() {
      * Configures a route to delete periodically expired urls
      */
     override fun configure() {
-        from("scheduler://foo?delay=60000")
+        from("scheduler://foo?delay=7000")
             .to("bean:shortUrlRepositoryService?method=deleteExpireds")
     }
 }
