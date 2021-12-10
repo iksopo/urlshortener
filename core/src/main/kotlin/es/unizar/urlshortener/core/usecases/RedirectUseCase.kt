@@ -24,15 +24,17 @@ interface RedirectUseCase {
 open class RedirectUseCaseImpl(
     private val shortUrlRepository: ShortUrlRepositoryService
 ) : RedirectUseCase {
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Transactional
     override fun redirectTo(key: String): Redirection =
         shortUrlRepository.findByKey(key)?.let {
-            shortUrlRepository.updateLeftUses(it)
-            if (!shortUrlRepository.checkNotExpired(it)){
+            val usable = shortUrlRepository.updateLeftUses(it) && shortUrlRepository.checkNotExpired(it)
+            if (usable){
+                return it.redirection
+            } else {
+                GlobalScope.launch {
+                    shortUrlRepository.deleteExpireds(key)
+                }
                 throw RedirectionNotFound(key)
             }
-            return it.redirection
         } ?: throw RedirectionNotFound(key)
 }
 
