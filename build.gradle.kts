@@ -103,7 +103,7 @@ project(":app") {
         "implementation"("org.webjars:bootstrap:3.3.5")
         "implementation"("org.webjars:jquery:2.1.4")
         "implementation"("org.apache.camel.springboot:camel-spring-boot-starter:3.13.0")
-        "implementation"("org.apache.camel.springboot:camel-scheduler-starter")
+        "implementation"("org.apache.camel:camel-quartz:3.13.0")
         "implementation"("org.apache.camel:camel-gson:3.13.0")
         "runtimeOnly"("org.hsqldb:hsqldb")
 
