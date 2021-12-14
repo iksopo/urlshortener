@@ -1,6 +1,6 @@
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
-import org.gradle.api.tasks.bundling.Jar
 
 
 plugins {
@@ -81,6 +81,10 @@ project(":delivery") {
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
         "implementation"("org.springframework.boot:spring-boot-starter-websocket")
+        "implementation"("io.springfox:springfox-swagger-ui:3.0.0")
+        "implementation"("io.springfox:springfox-boot-starter:3.0.0")
+
+
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
