@@ -1,3 +1,4 @@
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
@@ -79,6 +80,10 @@ project(":delivery") {
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
         "implementation"("org.springframework.boot:spring-boot-starter-websocket")
+        "implementation"("io.springfox:springfox-swagger-ui:3.0.0")
+        "implementation"("io.springfox:springfox-boot-starter:3.0.0")
+
+
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -100,7 +105,7 @@ project(":app") {
         "implementation"("org.webjars.npm:htmx.org:1.6.0")
 
         "implementation"("org.apache.camel.springboot:camel-spring-boot-starter:3.13.0")
-        "implementation"("org.apache.camel.springboot:camel-scheduler-starter")
+        "implementation"("org.apache.camel:camel-quartz:3.13.0")
         "implementation"("org.apache.camel:camel-gson:3.13.0")
         "runtimeOnly"("org.hsqldb:hsqldb")
 
