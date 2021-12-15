@@ -23,25 +23,20 @@ class ShortUrlRepositoryServiceImpl(
     private val shortUrlEntityRepository: ShortUrlEntityRepository
 ) : ShortUrlRepositoryService {
     override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findByHash(id)?.toDomain()
-    override fun updateLeftUses(su : ShortUrl) {
+    override fun updateLeftUses(su : ShortUrl) : Boolean {
         su.properties.leftUses?.let {
-            if (it == 1) {
-                shortUrlEntityRepository.deleteByHash(su.hash)
-            } else {
-                su.properties.leftUses = it -1
-                save(su)
-            }
+            val updatedRows = shortUrlEntityRepository.updateLeftUsesByHash(su.hash)
+            return updatedRows == 1
+        } ?: run {
+            return true
         }
     }
     override fun checkNotExpired(su : ShortUrl) : Boolean {
         su.properties.expiration?.let {
+            val suDate = it.toInstant().atOffset(ZoneOffset.UTC)
             val now = OffsetDateTime.now();
-            if (now.compareTo(it.toInstant().atOffset(ZoneOffset.UTC)) > 0) {
-                shortUrlEntityRepository.deleteByHash(su.hash)
-                return false
-            } else {
-                return true
-            }
+            println("Su: " + suDate + ", now: " + now + " = " + (now < suDate))
+            return now < suDate
         } ?: return true
     }
 
@@ -51,5 +46,8 @@ class ShortUrlRepositoryServiceImpl(
         shortUrlEntityRepository.deleteByExpirationBefore(Date.from(now.toInstant()))
     }
 
+    override fun deleteByKey(key: String) {
+        shortUrlEntityRepository.deleteByHash(key)
+    }
     override fun save(su: ShortUrl): ShortUrl = shortUrlEntityRepository.save(su.toEntity()).toDomain()
 }

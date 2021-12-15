@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
+
 plugins {
     id("org.springframework.boot") version "2.5.5" apply false
     id("io.spring.dependency-management") version "1.0.11.RELEASE" apply false
@@ -43,8 +44,8 @@ project(":core") {
         "implementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
-        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
         "implementation"("org.springframework.boot:spring-boot-starter-data-jpa")
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -79,6 +80,10 @@ project(":delivery") {
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
         "implementation"("org.springframework.boot:spring-boot-starter-websocket")
+        "implementation"("io.springfox:springfox-swagger-ui:3.0.0")
+        "implementation"("io.springfox:springfox-boot-starter:3.0.0")
+
+
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -100,8 +105,9 @@ project(":app") {
         "implementation"("org.webjars.npm:htmx.org:1.6.0")
 
         "implementation"("org.apache.camel.springboot:camel-spring-boot-starter:3.13.0")
-        "implementation"("org.apache.camel.springboot:camel-scheduler-starter")
+        "implementation"("org.apache.camel:camel-quartz:3.13.0")
         "implementation"("org.apache.camel:camel-gson:3.13.0")
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
         "runtimeOnly"("org.hsqldb:hsqldb")
 
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
