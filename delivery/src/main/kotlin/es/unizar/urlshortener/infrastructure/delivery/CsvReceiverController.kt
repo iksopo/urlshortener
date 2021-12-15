@@ -9,13 +9,15 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Controller
-import org.springframework.ui.Model
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
-import kotlin.collections.ArrayList
+
 
 @Controller
 class CsvReceiverController(
@@ -33,9 +35,8 @@ class CsvReceiverController(
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
-    fun upload2(@RequestParam("file") file: MultipartFile, @RequestParam("uuid") uuid:String,
-                model: Model, request: HttpServletRequest, response: HttpServletResponse) {
-        model.addAttribute("uuid", uuid)
+    fun uploadCsv(@RequestParam("file") file: MultipartFile, @RequestParam("uuid") uuid:String,
+                request: HttpServletRequest, response: HttpServletResponse) {
         val listener = sseRepository.createProgressListener(uuid)
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr, listener).let {
             val newLines = ArrayList<String>()
