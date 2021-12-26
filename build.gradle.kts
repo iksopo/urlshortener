@@ -116,5 +116,6 @@ project(":app") {
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
         "testImplementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "testImplementation"("org.apache.httpcomponents:httpclient")
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
     }
 }
