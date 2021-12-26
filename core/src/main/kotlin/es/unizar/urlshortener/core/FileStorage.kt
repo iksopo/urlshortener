@@ -7,7 +7,10 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.util.FileSystemUtils
 import java.io.PrintWriter
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.copyTo
 import kotlin.io.path.readLines
 
 interface FileStorage {
@@ -22,12 +25,12 @@ interface FileStorage {
 }
 
 @Service
-class FileStorageImpl: FileStorage{
-    val rootLocation = Paths.get("filestorage")
+class FileStorageImpl: FileStorage {
+    private var rootLocation = Paths.get("filestorage")
 
-    private var numFiles = 0
+    private var numFiles = AtomicInteger(0)
 
-    override fun store(file: MultipartFile, filename: String){
+    override fun store(file: MultipartFile, filename: String) {
         Files.copy(file.inputStream, this.rootLocation.resolve(filename))
     }
 
@@ -35,9 +38,9 @@ class FileStorageImpl: FileStorage{
         val file = rootLocation.resolve(filename)
         val resource = UrlResource(file.toUri())
 
-        if(resource.exists() || resource.isReadable) {
+        if (resource.exists() || resource.isReadable) {
             return resource
-        }else{
+        } else {
             throw FileDoesNotExist(filename)
         }
     }
@@ -46,16 +49,16 @@ class FileStorageImpl: FileStorage{
         Files.deleteIfExists(rootLocation.resolve(filename))
     }
 
-    override fun deleteAll(){
+    override fun deleteAll() {
         FileSystemUtils.deleteRecursively(rootLocation.toFile())
     }
 
-    override fun init(){
+    override fun init() {
         Files.createDirectory(rootLocation)
     }
 
     override fun generateName(): String {
-        return "tmp${numFiles++}"
+        return "tmp${numFiles.incrementAndGet()}"
     }
 
     override fun readLines(filename: String): List<String> = rootLocation.resolve(filename).readLines()

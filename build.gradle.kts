@@ -45,8 +45,8 @@ project(":core") {
         "implementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
-        "implementation"("org.springframework.boot:spring-boot-starter-data-jpa")
         "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
+        "implementation"("org.springframework.boot:spring-boot-starter-data-jpa")
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -102,6 +102,9 @@ project(":app") {
         "implementation"("org.springframework.boot:spring-boot-starter")
         "implementation"("org.webjars:bootstrap:3.3.5")
         "implementation"("org.webjars:jquery:2.1.4")
+        "implementation"("org.webjars:webjars-locator:0.42")
+        "implementation"("org.webjars.npm:htmx.org:1.6.0")
+
         "implementation"("org.apache.camel.springboot:camel-spring-boot-starter:3.13.0")
         "implementation"("org.apache.camel:camel-quartz:3.13.0")
         "implementation"("org.apache.camel:camel-gson:3.13.0")
