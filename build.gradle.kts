@@ -110,6 +110,9 @@ project(":app") {
         "implementation"("org.apache.camel:camel-gson:3.13.0")
         "runtimeOnly"("org.hsqldb:hsqldb")
 
+        "implementation"("org.quartz-scheduler:quartz")
+        "implementation"("org.springframework.boot:spring-boot-starter-cache")
+
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.springframework.boot:spring-boot-starter-web")
         "testImplementation"("org.springframework.boot:spring-boot-starter-jdbc")

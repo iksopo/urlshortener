@@ -4,7 +4,7 @@ import org.apache.camel.builder.RouteBuilder
 import org.springframework.stereotype.Component
 
 @Component
-class PeriodicDelete : RouteBuilder() {
+class CamelConfig : RouteBuilder() {
 
     /**
      * Configures a route to delete periodically expired urls
