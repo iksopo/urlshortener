@@ -1,30 +1,92 @@
 package es.unizar.urlshortener
 
+import es.unizar.urlshortener.core.ShortUrlRepositoryService
+import org.quartz.*
+import org.quartz.spi.TriggerFiredBundle
+import org.springframework.beans.BeansException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.quartz.*
-
-import org.springframework.scheduling.annotation.EnableScheduling
-import org.springframework.context.ApplicationContext
-
-import org.springframework.scheduling.quartz.SpringBeanJobFactory
 import org.springframework.core.io.ClassPathResource
-
+import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
-
-import org.quartz.JobDetail
-import org.quartz.SimpleTrigger
-
 import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean
-
+import org.springframework.scheduling.quartz.SpringBeanJobFactory
 import org.springframework.scheduling.quartz.JobDetailFactoryBean
+
+import javax.sql.DataSource
+
+import org.quartz.Job
+import org.quartz.JobExecutionContext
+import org.springframework.stereotype.Component
+
+
+
+/**
+ * Adds auto-wiring support to quartz scheduler jobs.
+ * Reference: "https://gist.github.com/jelies/5085593"
+ */
+class AutoWiringSpringBeanJobFactory : SpringBeanJobFactory(), ApplicationContextAware {
+    @Transient
+    private var beanFactory: AutowireCapableBeanFactory? = null
+
+    @Throws(BeansException::class)
+    override fun setApplicationContext(applicationContext: ApplicationContext) {
+        beanFactory = applicationContext.autowireCapableBeanFactory
+    }
+
+    @Throws(Exception::class)
+    override fun createJobInstance(bundle: TriggerFiredBundle): Any {
+        val job = super.createJobInstance(bundle)
+        beanFactory!!.autowireBean(job)
+        return job
+    }
+}
+
+/**
+ * Job used by the scheduler that updates the general stats
+ * in the cache by recalculating them
+ */
+@Component
+class ExpiredsDeleter: Job {
+
+    @Autowired
+    private val repo: ShortUrlRepositoryService? = null
+
+    /**
+     * Method to execute to delete expireds urls
+     */
+    override fun execute(context: JobExecutionContext) {
+        println("Deleting all expired dates...")
+        repo?.deleteExpireds()
+    }
+}
 
 @Configuration
 @EnableScheduling
-public QuartzScheduler(
+class QuartzConfig(
     @Autowired val applicationContext: ApplicationContext
 ){
+
+    //@Bean
+    //@QuartzDataSource
+    //fun quartzDataSource(): DataSource = DataSourceBuilder.create().build()
+
+    /**
+     * Get the job and define some meta-data
+     */
+    @Bean
+    fun jobDetail(): JobDetailFactoryBean {
+        val jobDetailFactory = JobDetailFactoryBean()
+        jobDetailFactory.setJobClass(ExpiredsDeleter::class.java)
+        jobDetailFactory.setName("ExpiredsDeleter")
+        jobDetailFactory.setDescription("Delete Expireds URIs by date")
+        jobDetailFactory.setDurability(true)
+        return jobDetailFactory
+    }
 
     @Bean
     fun springBeanJobFactory(): SpringBeanJobFactory {
@@ -39,7 +101,7 @@ public QuartzScheduler(
      * of the scheduler
      */
     @Bean
-    fun scheduler(trigger: Trigger, job: JobDetail): SchedulerFactoryBean {
+    fun scheduler(trigger: Trigger, job: JobDetail, quartzDataSource: DataSource): SchedulerFactoryBean {
         val schedulerFactory = SchedulerFactoryBean()
         schedulerFactory.setConfigLocation(
             ClassPathResource("quartz.properties")
@@ -47,6 +109,7 @@ public QuartzScheduler(
         schedulerFactory.setJobFactory(springBeanJobFactory())
         schedulerFactory.setJobDetails(job)
         schedulerFactory.setTriggers(trigger)
+        schedulerFactory.setDataSource(quartzDataSource)
         return schedulerFactory
     }
 
@@ -57,10 +120,11 @@ public QuartzScheduler(
     fun trigger(job: JobDetail): SimpleTriggerFactoryBean {
         val trigger = SimpleTriggerFactoryBean()
         trigger.setJobDetail(job)
-        val frequencyInSec = 1000
-        trigger.setRepeatInterval((frequencyInSec * 60).toLong())
+        val periodInSec = 10
+        trigger.setRepeatInterval((periodInSec * 1000).toLong())
         trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY)
-        trigger.setName("GeneralStats_Trigger")
+        trigger.setName("Deleter_trigger")
         return trigger
     }
 }
+

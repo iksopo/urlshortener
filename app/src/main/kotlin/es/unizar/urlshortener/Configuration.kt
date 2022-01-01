@@ -9,8 +9,11 @@ import es.unizar.urlshortener.infrastructure.repositories.ClickRepositoryService
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.quartz.QuartzDataSource
+import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import javax.sql.DataSource
 
 
 /**
