@@ -105,9 +105,6 @@ project(":app") {
         "implementation"("org.webjars:webjars-locator:0.42")
         "implementation"("org.webjars.npm:htmx.org:1.6.0")
 
-        "implementation"("org.apache.camel.springboot:camel-spring-boot-starter:3.13.0")
-        "implementation"("org.apache.camel:camel-quartz:3.13.0")
-        "implementation"("org.apache.camel:camel-gson:3.13.0")
         "runtimeOnly"("org.hsqldb:hsqldb")
 
         "implementation"("org.quartz-scheduler:quartz")

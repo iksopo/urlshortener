@@ -12,15 +12,12 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ClassPathResource
 import org.springframework.scheduling.annotation.EnableScheduling
-import org.springframework.scheduling.quartz.SchedulerFactoryBean
-import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean
-import org.springframework.scheduling.quartz.SpringBeanJobFactory
-import org.springframework.scheduling.quartz.JobDetailFactoryBean
 
 import javax.sql.DataSource
 
 import org.quartz.Job
 import org.quartz.JobExecutionContext
+import org.springframework.scheduling.quartz.*
 import org.springframework.stereotype.Component
 
 
@@ -53,6 +50,9 @@ class AutoWiringSpringBeanJobFactory : SpringBeanJobFactory(), ApplicationContex
 @Component
 class ExpiredsDeleter: Job {
 
+    /**
+     * Needs to be nullable but gets autowired correctly
+     */
     @Autowired
     private val repo: ShortUrlRepositoryService? = null
 
@@ -70,10 +70,6 @@ class ExpiredsDeleter: Job {
 class QuartzConfig(
     @Autowired val applicationContext: ApplicationContext
 ){
-
-    //@Bean
-    //@QuartzDataSource
-    //fun quartzDataSource(): DataSource = DataSourceBuilder.create().build()
 
     /**
      * Get the job and define some meta-data
@@ -117,13 +113,12 @@ class QuartzConfig(
      * Establish when to execute a job
      */
     @Bean
-    fun trigger(job: JobDetail): SimpleTriggerFactoryBean {
-        val trigger = SimpleTriggerFactoryBean()
+    fun trigger(job: JobDetail): CronTriggerFactoryBean {
+        val trigger = CronTriggerFactoryBean()
         trigger.setJobDetail(job)
-        val periodInSec = 10
-        trigger.setRepeatInterval((periodInSec * 1000).toLong())
-        trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY)
-        trigger.setName("Deleter_trigger")
+        trigger.setCronExpression("*/10 * * ? * * *")
+        // Refire
+        trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_SMART_POLICY)
         return trigger
     }
 }
