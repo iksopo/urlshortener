@@ -8,10 +8,13 @@ import es.unizar.urlshortener.infrastructure.repositories.ClickEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ClickRepositoryServiceImpl
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServiceImpl
-import org.apache.camel.component.quartz.QuartzComponent
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.quartz.QuartzDataSource
+import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import javax.sql.DataSource
+
 
 /**
  * Wires use cases with service implementations, and services implementations with repositories.
