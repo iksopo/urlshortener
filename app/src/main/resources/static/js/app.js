@@ -34,7 +34,8 @@ $(document).ready(
                             + request.getResponseHeader('Location')
                             + "</a></div>");
                     },
-                    error : () => {
+                    error : (msg, status, error) => {
+                        console.log("msg: " + msg)
                         $("#result").html(
                             "<div class='alert alert-danger lead'>ERROR</div>");
                     }
