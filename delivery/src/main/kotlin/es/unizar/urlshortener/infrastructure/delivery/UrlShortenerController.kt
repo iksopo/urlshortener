@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletRequest
 import org.springframework.ui.Model;
 import org.springframework.web.client.RestTemplate
 
+import javax.validation.constraints.Min;
 
 /**
  * The specification of the controller.
@@ -70,7 +71,15 @@ data class ShortUrlDataIn(
     val leftUses: Int? = null,
     val expiration: Date? = null,
     val sponsor: String? = null
-)
+) {
+    init {
+        println("im here")
+        leftUses?.let{
+            require(it > 0) { "leftUses must be greater than 0." }
+        }
+        println(expiration)
+    }
+}
 
 /**
  * Data returned after the creation of a short url.
