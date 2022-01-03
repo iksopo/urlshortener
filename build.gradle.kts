@@ -84,6 +84,8 @@ project(":delivery") {
         "implementation"("io.springfox:springfox-swagger-ui:3.0.0")
         "implementation"("io.springfox:springfox-boot-starter:3.0.0")
 
+        "implementation"("javax.validation:validation-api:2.0.1.Final")
+        "implementation"("org.hibernate.validator:hibernate-validator:6.0.13.Final")
 
     }
     tasks.getByName<BootJar>("bootJar") {
