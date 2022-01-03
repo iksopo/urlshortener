@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletRequest
 import org.springframework.ui.Model;
 import org.springframework.web.client.RestTemplate
 
-import io.micrometer.core.annotation.Timed
+//import io.micrometer.core.annotation.Timed
 
 /**
  * The specification of the controller.
@@ -98,7 +98,7 @@ class UrlShortenerControllerImpl(
     @Autowired
     lateinit var validateURIUseCase: ValidateURIUseCase
 
-    @Timed(value="redirection.time")
+    //@Timed(value="redirection.time")
     @GetMapping("/tiny-{id:.*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
         redirectUseCase.redirectTo(id).let {

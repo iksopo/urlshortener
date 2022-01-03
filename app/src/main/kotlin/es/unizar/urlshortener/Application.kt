@@ -7,8 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
 
-import io.micrometer.core.aop.TimedAspect
-import io.micrometer.core.instrument.MeterRegistry
+//import io.micrometer.core.aop.TimedAspect
+//import io.micrometer.core.instrument.MeterRegistry
 
 /**
  * The marker that makes this project a Spring Boot application.
@@ -23,5 +23,5 @@ fun main(args: Array<String>) {
     runApplication<UrlShortenerApplication>(*args)
 }
 
-@Bean
-fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
+//@Bean
+//fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
