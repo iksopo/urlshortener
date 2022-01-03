@@ -35,9 +35,11 @@ $(document).ready(
                             + "</a></div>");
                     },
                     error : (msg, status, error) => {
-                        console.log("msg: " + msg)
+                        console.log("msg: ", msg)
+                        console.log("status: ", status)
+                        console.log("error: ", error)
                         $("#result").html(
-                            "<div class='alert alert-danger lead'>ERROR</div>");
+                            "<div class='alert alert-danger lead'>ERROR " + msg.status + " (" + msg.state() + "):" + error + "</div>");
                     }
                 });
             });
