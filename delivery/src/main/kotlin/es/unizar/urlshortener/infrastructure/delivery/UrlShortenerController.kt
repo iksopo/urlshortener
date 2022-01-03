@@ -73,8 +73,7 @@ data class ShortUrlDataIn(
     val sponsor: String? = null
 ) {
     init {
-        //leftUses?.let{ require(it > 0) { "leftUses must be greater than 0." }}
-        println(expiration)
+        leftUses?.let{ require(it > 0) { "leftUses must be greater than 0." }}
     }
 }
 

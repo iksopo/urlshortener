@@ -39,7 +39,7 @@ $(document).ready(
                         console.log("status: ", status)
                         console.log("error: ", error)
                         $("#result").html(
-                            "<div class='alert alert-danger lead'>ERROR " + msg.status + " (" + msg.state() + "):" + error + "</div>");
+                            "<div class='alert alert-danger lead'>ERROR " + msg.status + " (" + msg.state() + "): " + msg.responseJSON.message + "</div>");
                     }
                 });
             });

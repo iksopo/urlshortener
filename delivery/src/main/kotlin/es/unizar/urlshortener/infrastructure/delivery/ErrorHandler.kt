@@ -3,6 +3,7 @@ package es.unizar.urlshortener.infrastructure.delivery
 import com.fasterxml.jackson.annotation.JsonFormat
 import es.unizar.urlshortener.core.*
 import es.unizar.urlshortener.core.usecases.*
+import org.springframework.beans.BeanInstantiationException
 import org.springframework.beans.TypeMismatchException
 import org.springframework.core.convert.ConversionFailedException
 import org.springframework.http.*
@@ -17,53 +18,30 @@ import java.util.*
 import javax.validation.ConstraintViolationException
 
 // https://betterprogramming.pub/environment-based-error-handling-with-spring-boot-and-kotlin-b36b901135ad
-class ErrorResponse(
-    status: HttpStatus,
+data class ErrorResponse(
+    val status: HttpStatus,
     val message: String,
-    var stackTrace: String? = null
-) {
-    var code: Int = 200
-    var statusString: String = ""
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MM-dd-yyyy hh:mm:ss")
-    val timestamp: Date = Date()
-    init {
-        code = status.value()
-        statusString = status.name
-    }
-}
+    val localizedMessage: String? = null
+)
 
 @ControllerAdvice
 class ControllerExceptionsHandler {
 
     @ExceptionHandler(
-        ConstraintViolationException::class,
-        HttpClientErrorException.BadRequest::class,
-        MethodArgumentNotValidException::class,
-        MissingServletRequestParameterException::class,
-        IllegalArgumentException::class
+        BeanInstantiationException::class,
     )
-    fun constraintViolationException(e: Exception): ResponseEntity<ErrorResponse> {
-        return generateErrorResponse(HttpStatus.BAD_REQUEST, "Bad request", e)
-    }
-
-    @ExceptionHandler(
-        //EntityNotFoundException::class,
-        NoSuchElementException::class,
-        //NoResultException::class,
-        //EmptyResultDataAccessException::class,
-        IndexOutOfBoundsException::class,
-        KotlinNullPointerException::class
-    )
-
-    fun notFoundException(e: Exception): ResponseEntity<ErrorResponse> {
-        return generateErrorResponse(HttpStatus.NOT_FOUND, "Resource not found", e)
+    fun illegalArgumentException(e: Exception): ResponseEntity<ErrorResponse> {
+        val nested = e.cause as Exception
+        return generateErrorResponse(HttpStatus.BAD_REQUEST, nested.localizedMessage, nested)
     }
 
     @ExceptionHandler(
         Exception::class
-    )
+    ) // No quedaba otra que hacerlo así porque lanza algo anónimo (extraño)
     fun internalServerErrorException(e: Exception): ResponseEntity<ErrorResponse> {
+        if (Regex("Invalid Date").containsMatchIn(e.localizedMessage)) {
+            return generateErrorResponse(HttpStatus.BAD_REQUEST, "Date must have a correct format.", e)
+        }
         return generateErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Generic internal error", e)
     }
 
@@ -72,25 +50,12 @@ class ControllerExceptionsHandler {
         message: String,
         e: Exception
     ): ResponseEntity<ErrorResponse> {
-        // converting the exception stack trace to a string
-        val sw = StringWriter()
-        val pw = PrintWriter(sw)
-        e.printStackTrace(pw)
-        val stackTrace = sw.toString()
-
-        // example: logging the stack trace
         println("---*---")
-        println(message)
+        println(e.javaClass.simpleName)
         println(status)
+        println(message)
         println(e.localizedMessage)
         println("---*---")
-
-        if (Regex("Invalid Date").containsMatchIn(e.localizedMessage)) {
-            return ResponseEntity(ErrorResponse(HttpStatus.BAD_REQUEST, "Date must have a correct format.", e.localizedMessage), status)
-        }
-
         return ResponseEntity(ErrorResponse(status, message, e.message), status)
-
     }
-
 }
