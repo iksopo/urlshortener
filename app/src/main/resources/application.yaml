@@ -7,3 +7,5 @@ spring:
     driverClassName: org.hsqldb.jdbc.JDBCDriver
   jpa:
     open-in-view: false
+  quartz:
+    job-store-type: jdbc
