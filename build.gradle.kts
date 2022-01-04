@@ -47,6 +47,7 @@ project(":core") {
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
         "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
         "implementation"("org.springframework.boot:spring-boot-starter-data-jpa")
+        "implementation"("org.springframework.boot:spring-boot-starter-actuator")
     }
     tasks.getByName<BootJar>("bootJar") {
         enabled = false
@@ -81,8 +82,8 @@ project(":delivery") {
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.mockito.kotlin:mockito-kotlin:3.2.0")
 
-        //"implementation"("org.springframework.boot:spring-boot-starter-actuator")
-        //"implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
+        "implementation"("org.springframework.boot:spring-boot-starter-actuator")
+        "implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
 
         "implementation"("org.springframework.boot:spring-boot-starter-websocket")
         "implementation"("io.springfox:springfox-swagger-ui:3.0.0")
@@ -124,8 +125,8 @@ project(":app") {
         "testImplementation"("org.apache.httpcomponents:httpclient")
         "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
 
-        //"implementation"("org.springframework.boot:spring-boot-starter-actuator")
-        //"implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
-        //"implementation"("org.springframework.boot:spring-boot-starter-aop")
+        "implementation"("org.springframework.boot:spring-boot-starter-actuator")
+        "implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
+        "implementation"("org.springframework.boot:spring-boot-starter-aop")
     }
 }
