@@ -35,6 +35,8 @@ import org.springframework.web.client.RestTemplate
 
 import javax.validation.constraints.Min;
 
+import io.micrometer.core.annotation.Timed
+
 /**
  * The specification of the controller.
  */
@@ -102,6 +104,7 @@ class UrlShortenerControllerImpl(
     @Autowired
     lateinit var validateURIUseCase: ValidateURIUseCase
 
+    @Timed(value="redirection.time")
     @GetMapping("/tiny-{id:.*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
         redirectUseCase.redirectTo(id).let {

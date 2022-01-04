@@ -39,10 +39,10 @@ class HttpRequestTest {
 
     @BeforeEach
     fun setup() {
-        val httpClient = HttpClientBuilder.create()
-            .disableRedirectHandling()
-            .build()
+        /*
+        val httpClient = HttpClientBuilder.create().disableRedirectHandling().build()
         (restTemplate.restTemplate.requestFactory as HttpComponentsClientHttpRequestFactory).httpClient = httpClient
+        */
 
         JdbcTestUtils.deleteFromTables(jdbcTemplate, "shorturl", "click")
     }
@@ -177,6 +177,19 @@ class HttpRequestTest {
             }
         }
         assertThat(redirections).isEqualTo(numberUses)
+    }
+
+    @Test
+    fun `metrics health works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/actuator/health", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body).contains("UP")
+    }
+
+    @Test
+    fun `metrics process uptime works`() {
+        val response = restTemplate.getForEntity("http://localhost:$port/actuator/metrics/process.uptime", String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {

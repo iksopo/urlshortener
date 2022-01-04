@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
 
+import io.micrometer.core.aop.TimedAspect
+import io.micrometer.core.instrument.MeterRegistry
 
 /**
  * Wires use cases with service implementations, and services implementations with repositories.
@@ -59,6 +61,9 @@ class ApplicationConfiguration(
 
     @Bean
     fun ValidateURIUseCase() = ValidateURIUseCaseImpl()
+
+    @Bean
+    fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
 }
 
 
