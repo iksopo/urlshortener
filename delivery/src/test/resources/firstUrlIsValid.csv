@@ -1,4 +1,8 @@
-http://unizar.es
-https://moodle.unizar.es
-invalid line
-http://www.google.es
+http://unizar.es,5,2022-03-03T00:27:45.812+01:00
+https://unizar.es,2,
+https://moodle.unizar.es,,2022-01-03T00:27:45.812+01:00
+invalid line,,
+http://www.google.es,,
+https://www.google.com,-1,
+https://www.google.com,abdc,
+https://www.google.com,,abcd

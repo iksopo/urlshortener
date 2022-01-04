@@ -6,18 +6,15 @@ import es.unizar.urlshortener.core.InvalidUrlException
 import es.unizar.urlshortener.core.RedirectionNotFound
 import org.springframework.beans.BeanInstantiationException
 import org.springframework.http.HttpHeaders
+import es.unizar.urlshortener.core.*
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 
 @ControllerAdvice
@@ -37,6 +34,11 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [InvalidTypeOfFile::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected fun invalidTypeOfFile(ex: InvalidTypeOfFile) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [WrongStructuredFile::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected fun wrongStructuredFile(ex: WrongStructuredFile) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
 
     @ResponseBody
     @ExceptionHandler(value = [FileDoesNotExist::class])
