@@ -42,7 +42,6 @@ class ShortUrlRepositoryServiceImpl(
 
     override fun deleteExpireds() {
         val now = OffsetDateTime.now()
-        println("Deleting all expired dates... (before: " + now + ")")
         shortUrlEntityRepository.deleteByExpirationBefore(Date.from(now.toInstant()))
     }
 

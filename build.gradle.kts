@@ -84,6 +84,8 @@ project(":delivery") {
         "implementation"("io.springfox:springfox-swagger-ui:3.0.0")
         "implementation"("io.springfox:springfox-boot-starter:3.0.0")
 
+        "implementation"("javax.validation:validation-api:2.0.1.Final")
+        "implementation"("org.hibernate.validator:hibernate-validator:6.0.13.Final")
 
     }
     tasks.getByName<BootJar>("bootJar") {
@@ -105,10 +107,10 @@ project(":app") {
         "implementation"("org.webjars:webjars-locator:0.42")
         "implementation"("org.webjars.npm:htmx.org:1.6.0")
 
-        "implementation"("org.apache.camel.springboot:camel-spring-boot-starter:3.13.0")
-        "implementation"("org.apache.camel:camel-quartz:3.13.0")
-        "implementation"("org.apache.camel:camel-gson:3.13.0")
         "runtimeOnly"("org.hsqldb:hsqldb")
+
+        "implementation"("org.quartz-scheduler:quartz")
+        "implementation"("org.springframework.boot:spring-boot-starter-cache")
 
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.springframework.boot:spring-boot-starter-web")

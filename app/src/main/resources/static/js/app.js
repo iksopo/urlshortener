@@ -34,9 +34,12 @@ $(document).ready(
                             + request.getResponseHeader('Location')
                             + "</a></div>");
                     },
-                    error : () => {
+                    error : (msg, status, error) => {
+                        console.log("msg: ", msg)
+                        console.log("status: ", status)
+                        console.log("error: ", error)
                         $("#result").html(
-                            "<div class='alert alert-danger lead'>ERROR</div>");
+                            "<div class='alert alert-danger lead'>ERROR " + msg.status + " (" + msg.state() + "): " + msg.responseJSON.message + "</div>");
                     }
                 });
             });
