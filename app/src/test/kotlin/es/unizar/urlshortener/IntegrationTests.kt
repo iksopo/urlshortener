@@ -134,7 +134,7 @@ class HttpRequestTest {
     fun `csv page works`() {
         val response = restTemplate.getForEntity("http://localhost:$port/csv", String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        assertThat(response.body).contains("Create short URLs for the URLs in a CSV file")
+        assertThat(response.body).contains("URL Shortener: CSV")
     }
 
     @Test
