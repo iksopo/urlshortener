@@ -63,15 +63,20 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                     ShortUrl(
                                         hash = "", redirection = Redirection(lineSplitByComma[0]),
                                         properties = ShortUrlProperties(safe = false, ip = remoteAddr)
-                                    ), "Invalid structure of line, each line must consist of three comma-separated fields, even if they are empty"
+                                    ), "Invalid structure of line: each line must consist of three comma-separated fields even if they are empty"
                                 )
                             )
                         }
                     } else {
                         allWrongFormatted.set(false)
                         val url = lineSplitByComma[0]
-                        val leftUses = lineSplitByComma[1].toIntOrNull() // TODO: throw if it's not ""
+                        val leftUses = lineSplitByComma[1].toIntOrNull()
                         try {
+                            if ((leftUses == null && lineSplitByComma[1] != "") ||
+                                (leftUses != null && leftUses <= 0)) {
+                                throw InvalidLeftUses(lineSplitByComma[1])
+                            }
+
                             val expiration = lineSplitByComma[2].let { date ->
                                 if (date == "") {
                                     null
@@ -93,27 +98,31 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                             ).let {
                                 mutex.withLock { shortUrls.add(Pair(it, null)) }
                             }
-                        } catch (ex: InvalidUrlException) {
-                            mutex.withLock {
-                                shortUrls.add(
-                                    Pair(
-                                        ShortUrl(
-                                            hash = "", redirection = Redirection(url),
-                                            properties = ShortUrlProperties(safe = false, ip = remoteAddr)
-                                        ), ex.message
-                                    )
-                                )
-                            }
-                        } catch (ex: DateTimeParseException) {
-                            mutex.withLock {
-                                shortUrls.add(
-                                    Pair(
-                                        ShortUrl(
-                                            hash = "", redirection = Redirection(url),
-                                            properties = ShortUrlProperties(safe = false, ip = remoteAddr)
-                                        ), "[${lineSplitByComma[2]}] cannot be parsed to a valid date"
-                                    )
-                                )
+                        } catch (ex: Exception) {
+                            when(ex) {
+                                is InvalidUrlException,
+                                is InvalidLeftUses ->
+                                    mutex.withLock {
+                                        shortUrls.add(
+                                            Pair(
+                                                ShortUrl(
+                                                    hash = "", redirection = Redirection(url),
+                                                    properties = ShortUrlProperties(safe = false, ip = remoteAddr)
+                                                ), ex.message
+                                            )
+                                        )
+                                    }
+                                is DateTimeParseException ->
+                                    mutex.withLock {
+                                        shortUrls.add(
+                                            Pair(
+                                                ShortUrl(
+                                                    hash = "", redirection = Redirection(url),
+                                                    properties = ShortUrlProperties(safe = false, ip = remoteAddr)
+                                                ), "[${lineSplitByComma[2]}] cannot be parsed to a valid date"
+                                            )
+                                        )
+                                    }
                             }
                         }
                     }
