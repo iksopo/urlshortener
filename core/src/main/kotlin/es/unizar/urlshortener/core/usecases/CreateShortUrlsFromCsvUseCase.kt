@@ -6,8 +6,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.springframework.web.multipart.MultipartFile
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
@@ -29,6 +33,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
     private var fileStorage: FileStorage,
     private val createShortUrlUseCase: CreateShortUrlUseCase
 ) : CreateShortUrlsFromCsvUseCase {
+    private val millisPerDay = 24 * 60 * 60 * 1000 // milliseconds in a day
     override fun create(file: MultipartFile, remoteAddr: String, listener: ProgressListener): FileAndShortUrl {
         val nameSplitByPoint = file.originalFilename?.split(".")
         if (nameSplitByPoint == null || !nameSplitByPoint[nameSplitByPoint.size-1].equals("csv", ignoreCase = true)) {
@@ -71,16 +76,13 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                 if (date == "") {
                                     null
                                 } else {
-                                    java.sql.Date.valueOf(
-                                        LocalDate.parse(
-                                            lineSplitByComma[2],
-                                            DateTimeFormatter.ISO_OFFSET_DATE_TIME
-                                        )
-                                    )
+                                    val dateTime = OffsetDateTime.parse(date, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                                    val day = dateTime.toLocalDate()
+                                    val time = dateTime.toLocalTime()
+                                    Date(day.toEpochSecond(time, dateTime.offset) * 1000)
                                 }
                             }
-                            println(expiration)
-                            //LocalDate.parse(lineSplitByComma[2], DateTimeFormatter.ISO_OFFSET_DATE_TIME) //OffsetDateTime.parse(lineSplitByComma[2])
+
                             createShortUrlUseCase.create(
                                 url = url,
                                 data = ShortUrlProperties(
@@ -102,6 +104,17 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                     )
                                 )
                             }
+                        } catch (ex: DateTimeParseException) {
+                            mutex.withLock {
+                                shortUrls.add(
+                                    Pair(
+                                        ShortUrl(
+                                            hash = "", redirection = Redirection(url),
+                                            properties = ShortUrlProperties(safe = false, ip = remoteAddr)
+                                        ), "[${lineSplitByComma[2]}] cannot be parsed to a valid date"
+                                    )
+                                )
+                            }
                         }
                     }
                     val progress = counter.incrementAndGet() * 100 / numUrls
@@ -111,7 +124,6 @@ class CreateShortUrlsFromCsvUseCaseImpl(
         }
         listener.onCompletion()
         if (!wellFormatted.get() && allWrongFormatted.get()) {
-            println(nameSplitByPoint.joinToString("."))
             fileStorage.deleteFile(newName)
             throw WrongStructuredFile(nameSplitByPoint.joinToString("."))
         }
