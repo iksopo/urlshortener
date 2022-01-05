@@ -162,6 +162,13 @@ class HttpRequestTest {
     }
 
     @Test
+    fun `asks with 0 uses left`() {
+        val response = shortUrl("http://example.com/", leftUses = 0)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+
+    @Test
     fun `creates an url that expires in 14 seconds`() {
         val sUrl = shortUrl("https://www.google.com/", null, OffsetDateTime.now().plusSeconds(60))
         println(sUrl)
