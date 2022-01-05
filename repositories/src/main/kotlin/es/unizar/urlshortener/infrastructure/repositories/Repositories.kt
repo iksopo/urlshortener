@@ -20,7 +20,10 @@ interface ShortUrlEntityRepository : JpaRepository<ShortUrlEntity, String> {
     fun deleteByHash(hash: String)
 
     @Transactional
-    fun deleteByExpirationBefore(date: Date)
+    fun deleteByExpirationBefore(date: Date) : Int
+
+    @Transactional
+    fun deleteByLeftUsesEquals(leftUses: Int) : Int
 
     @Transactional
     @Modifying

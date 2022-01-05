@@ -60,8 +60,9 @@ class ExpiredsDeleter: Job {
      * Method to execute to delete expireds urls
      */
     override fun execute(context: JobExecutionContext) {
-        println("Deleting all expired dates...")
-        repo?.deleteExpireds()
+        repo?.deleteExpireds().let{
+            println("Deleting all expired URLs: {expiration=" + it!!.first + ", leftUses=" + it!!.second + "}")
+        }
     }
 }
 

@@ -31,11 +31,6 @@ open class RedirectUseCaseImpl(
             if (usable){
                 return it.redirection
             } else {
-                GlobalScope.launch {
-                    try {
-                        shortUrlRepository.deleteByKey(key)
-                    } catch (e: Exception){}
-                }
                 throw RedirectionNotFound(key)
             }
         } ?: throw RedirectionNotFound(key)
