@@ -72,8 +72,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                         val url = lineSplitByComma[0]
                         val leftUses = lineSplitByComma[1].toIntOrNull()
                         try {
-                            if ((leftUses == null && lineSplitByComma[1] != "") ||
-                                (leftUses != null && leftUses <= 0)) {
+                            if ((leftUses == null && lineSplitByComma[1] != "")) {
                                 throw InvalidLeftUses(lineSplitByComma[1])
                             }
 
