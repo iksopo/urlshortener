@@ -15,7 +15,7 @@ interface ShortUrlRepositoryService {
     fun save(su: ShortUrl): ShortUrl
     fun updateLeftUses(su : ShortUrl): Boolean
     fun checkNotExpired(su : ShortUrl) : Boolean
-    fun deleteExpireds()
+    fun deleteExpireds() : Pair<Int, Int>
     fun deleteByKey(key: String)
 }
 
