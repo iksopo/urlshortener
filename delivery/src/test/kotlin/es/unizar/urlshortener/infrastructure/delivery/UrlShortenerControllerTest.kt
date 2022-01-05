@@ -85,9 +85,9 @@ class UrlShortenerControllerTest {
     @Test
     fun `creates returns bad request if it can compute a hash`() {
         given(createShortUrlUseCase.create(
-            url = "ftp://example.com/",
+            url = "http://example.com/",
             data = ShortUrlProperties(ip = "127.0.0.1")
-        )).willAnswer { throw InvalidUrlException("ftp://example.com/") }
+        )).willAnswer { throw InvalidUrlException("http://example.com/") }
 
         mockMvc.perform(post("/api/link")
             .param("url", "ftp://example.com/")

@@ -138,6 +138,30 @@ class HttpRequestTest {
     }
 
     @Test
+    fun `asks with bad number format`() {
+        val headers = HttpHeaders()
+        headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
+
+        val data: MultiValueMap<String, String> = LinkedMultiValueMap()
+        data["url"] = "http://example.com/"
+        data["leftUses"] = "Definitely not a number"
+        val response = restTemplate.postForEntity("http://localhost:$port/api/link", HttpEntity(data, headers), ShortUrlDataOut::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    fun `asks with bad date format`() {
+        val headers = HttpHeaders()
+        headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
+
+        val data: MultiValueMap<String, String> = LinkedMultiValueMap()
+        data["url"] = "http://example.com/"
+        data["expiration"] = "Definitely not a number"
+        val response = restTemplate.postForEntity("http://localhost:$port/api/link", HttpEntity(data, headers), ShortUrlDataOut::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
     fun `creates an url that expires in 14 seconds`() {
         val sUrl = shortUrl("https://www.google.com/", null, OffsetDateTime.now().plusSeconds(60))
         println(sUrl)

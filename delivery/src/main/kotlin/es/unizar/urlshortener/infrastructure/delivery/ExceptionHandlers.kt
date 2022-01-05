@@ -7,6 +7,8 @@ import es.unizar.urlshortener.core.RedirectionNotFound
 import org.springframework.beans.BeanInstantiationException
 import org.springframework.http.HttpHeaders
 import es.unizar.urlshortener.core.*
+import org.springframework.beans.ConversionNotSupportedException
+import org.springframework.beans.TypeMismatchException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -45,21 +47,11 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     protected fun fileDoesNotExist(ex: FileDoesNotExist) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
 
-    @ExceptionHandler(BeanInstantiationException::class)
-    fun illegalArgumentException(e: Exception): ErrorMessage {
-        println("?")
-        val nested = e.cause as Exception
-        return ErrorMessage(HttpStatus.BAD_REQUEST.value(), nested.localizedMessage)
-    }
-
-    @ExceptionHandler(Exception::class)
-    fun internalServerErrorException(e: Exception): ErrorMessage {
-        println("?")
-        if (Regex("Invalid Date").containsMatchIn(e.localizedMessage)) {
-            return ErrorMessage(HttpStatus.BAD_REQUEST.value(), "Date must have a correct format.")
-        }
-
-        return ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Generic internal error")
+    @ResponseBody
+    @ExceptionHandler(value = [InvalidLeftUses::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun invalidLeftUses(ex: InvalidLeftUses): ErrorMessage {
+        return ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message)
     }
 }
 
