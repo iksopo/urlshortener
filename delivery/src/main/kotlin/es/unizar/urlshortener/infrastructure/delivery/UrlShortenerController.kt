@@ -73,11 +73,7 @@ data class ShortUrlDataIn(
     val leftUses: Int? = null,
     val expiration: Date? = null,
     val sponsor: String? = null
-) {
-    init {
-        leftUses?.let{ require(it > 0) { "leftUses must be greater than 0." }}
-    }
-}
+)
 
 /**
  * Data returned after the creation of a short url.
@@ -99,7 +95,6 @@ class UrlShortenerControllerImpl(
     val logClickUseCase: LogClickUseCase,
     val createShortUrlUseCase: CreateShortUrlUseCase
 ) : UrlShortenerController {
-
 
     @Autowired
     lateinit var validateURIUseCase: ValidateURIUseCase

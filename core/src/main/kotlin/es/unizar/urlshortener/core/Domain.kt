@@ -40,7 +40,7 @@ data class ShortUrlProperties(
     val safe: Boolean = true,
     val owner: String? = null,
     val country: String? = null,
-    var leftUses: Int? = null,
+    val leftUses: Int? = null,
     val expiration: Date? = null
 )
 
