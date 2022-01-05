@@ -24,7 +24,6 @@ class CreateShortUrlUseCaseImpl(
     override fun create(url: String, data: ShortUrlProperties): ShortUrl =
         if (data.leftUses != null && data.leftUses <= 0) throw InvalidLeftUses(data.leftUses.toString())
         else if(validatorService.isValid(url)) {
-            println(data)
             val id: String = hashService.hasUrl(url)
             val su = ShortUrl(
                 hash = id,
