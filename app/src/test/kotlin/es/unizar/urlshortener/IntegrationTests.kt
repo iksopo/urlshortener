@@ -29,6 +29,7 @@ import org.springframework.test.jdbc.JdbcTestUtils
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MockMvcBuilder
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.util.LinkedMultiValueMap
@@ -248,30 +249,105 @@ class HttpRequestTest {
     }
 
     @Test
-    fun `uploadCsv returns a file when first url is valid`() {
-        val uuid = getUuid()
-        val sentFile = fileToSend("firstUrlIsValid.csv")
-        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
-
-        mockMvc.perform(
-            MockMvcRequestBuilders.multipart("/csv")
-            .file(sentFile)
-            .param("uuid", uuid))
-            .andExpect(MockMvcResultMatchers.status().isCreated)
-            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
-    }
-
-    @Test
     fun `uploadCsv throws exception when the type of file is invalid`() {
         val uuid = getUuid()
         val sentFile = fileToSend("notACsv.txt")
         val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
 
         mockMvc.perform(
-            MockMvcRequestBuilders.multipart("/csv")
+            multipart("/csv")
             .file(sentFile)
             .param("uuid", uuid))
             .andExpect(MockMvcResultMatchers.status().isBadRequest)
+    }
+
+    @Test
+    fun `uploadCsv throws exception when all lines in the file have invalid format`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("onlyInvalidLines.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            multipart("/csv")
+                .file(sentFile)
+                .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
+    }
+
+    @Test
+    fun `uploadCsv returns empty file when the sent one is empty`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("empty.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            multipart("/csv")
+                .file(sentFile)
+                .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
+            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("empty.csv")))
+    }
+
+    @Test
+    fun `uploadCsv returns a file when first url is valid`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("firstUrlIsValid.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            multipart("/csv")
+                .file(sentFile)
+                .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
+            //.andExpect(MockMvcResultMatchers.content().string(String(fileBytes("shortForFirstIsValid.csv"))))
+            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForFirstIsValid.csv")))
+    }
+
+    @Test
+    fun `uploadCsv returns a file when first url is invalid`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("firstUrlIsInvalid.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            multipart("/csv")
+                .file(sentFile)
+                .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
+            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForFirstIsInvalid.csv")))
+    }
+
+    @Test
+    fun `uploadCsv returns a file when format of first line is invalid`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("firstLineIsIncomplete.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            multipart("/csv")
+                .file(sentFile)
+                .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
+            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForFirstIsIncomplete.csv")))
+    }
+
+    @Test
+    fun `uploadCsv returns a file when sent file has hundreds of lines`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("aLotOfUrls.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            multipart("/csv")
+                .file(sentFile)
+                .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
+            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForALotOfUrls.csv")))
     }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
@@ -308,6 +384,11 @@ class HttpRequestTest {
             return Files.readAllBytes(path)
         })
         return MockMultipartFile("file", filename, "text/plain", fileBytes)
+    }
+
+    private fun fileBytes(filename: String): ByteArray {
+        val path = Paths.get("src/test/resources/$filename")
+        return Files.readAllBytes(path)
     }
 
 }
