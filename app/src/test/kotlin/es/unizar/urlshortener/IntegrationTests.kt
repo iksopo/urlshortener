@@ -1,5 +1,9 @@
 package es.unizar.urlshortener
 
+import es.unizar.urlshortener.core.InvalidTypeOfFile
+import es.unizar.urlshortener.core.InvalidUrlException
+import es.unizar.urlshortener.core.ShortUrlProperties
+import es.unizar.urlshortener.core.SseEmitterProgressListener
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -8,22 +12,39 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.mockito.BDDMockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
+import org.springframework.boot.test.context.assertj.AssertableReactiveWebApplicationContext
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.jdbc.JdbcTestUtils
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.MockMvcBuilder
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.context.WebApplicationContext
+import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.io.path.absolutePathString
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -36,6 +57,9 @@ class HttpRequestTest {
 
     @Autowired
     private lateinit var restTemplate: TestRestTemplate
+
+    @Autowired
+    private lateinit var webApplicationContext: WebApplicationContext
 
     @BeforeEach
     fun setup() {
@@ -223,6 +247,33 @@ class HttpRequestTest {
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
     }
 
+    @Test
+    fun `uploadCsv returns a file when first url is valid`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("firstUrlIsValid.csv")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.multipart("/csv")
+            .file(sentFile)
+            .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isCreated)
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
+    }
+
+    @Test
+    fun `uploadCsv throws exception when the type of file is invalid`() {
+        val uuid = getUuid()
+        val sentFile = fileToSend("notACsv.txt")
+        val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+
+        mockMvc.perform(
+            MockMvcRequestBuilders.multipart("/csv")
+            .file(sentFile)
+            .param("uuid", uuid))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest)
+    }
+
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
@@ -240,6 +291,23 @@ class HttpRequestTest {
             "http://localhost:$port/api/link",
             HttpEntity(data, headers), ShortUrlDataOut::class.java
         )
+    }
+
+    private fun getUuid(): String {
+        val responseWithUuid = restTemplate.getForEntity("http://localhost:$port/csv", String::class.java)
+        val body = responseWithUuid.body.toString()
+        val preRegex = ".*<input name=\"uuid\" type=\"hidden\" value=\"".toRegex()
+        val postRegex = "\">.*".toRegex()
+        val regex = "<input name=\"uuid\".+\">".toRegex()
+        return regex.find(body)!!.value.replace(preRegex, "").replace(postRegex, "")
+    }
+
+    private fun fileToSend(filename: String): MockMultipartFile {
+        val path = Paths.get("src/test/resources/$filename")
+        val fileBytes = assertDoesNotThrow("The file could not be read", fun (): ByteArray {
+            return Files.readAllBytes(path)
+        })
+        return MockMultipartFile("file", filename, "text/plain", fileBytes)
     }
 
 }

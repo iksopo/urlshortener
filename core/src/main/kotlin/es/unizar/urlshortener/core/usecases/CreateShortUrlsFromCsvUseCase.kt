@@ -33,7 +33,6 @@ class CreateShortUrlsFromCsvUseCaseImpl(
     private var fileStorage: FileStorage,
     private val createShortUrlUseCase: CreateShortUrlUseCase
 ) : CreateShortUrlsFromCsvUseCase {
-    private val millisPerDay = 24 * 60 * 60 * 1000 // milliseconds in a day
     override fun create(file: MultipartFile, remoteAddr: String, listener: ProgressListener): FileAndShortUrl {
         val nameSplitByPoint = file.originalFilename?.split(".")
         if (nameSplitByPoint == null || !nameSplitByPoint[nameSplitByPoint.size-1].equals("csv", ignoreCase = true)) {
