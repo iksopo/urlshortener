@@ -169,8 +169,8 @@ class HttpRequestTest {
 
 
     @Test
-    fun `creates an url that expires in 14 seconds`() {
-        val sUrl = shortUrl("https://www.google.com/", null, OffsetDateTime.now().plusSeconds(60))
+    fun `creates an url that expires in 20 seconds`() {
+        val sUrl = shortUrl("https://www.google.com/", null, OffsetDateTime.now().plusSeconds(20))
         println(sUrl)
         val target = sUrl.headers.location
         require(target != null)
@@ -181,8 +181,7 @@ class HttpRequestTest {
         val response2 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response2.headers.location).isEqualTo(URI.create("https://www.google.com/"))
-
-        Thread.sleep(65_000)
+        Thread.sleep(21_000)
         val response3 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -221,6 +220,40 @@ class HttpRequestTest {
     fun `metrics process uptime works`() {
         val response = restTemplate.getForEntity("http://localhost:$port/actuator/metrics/process.uptime", String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+    }
+
+    @Test
+    fun `expiration uses URIs gets deleted async`() {
+        val sUrl = shortUrl("http://example.com/", 1)
+        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
+        val target = sUrl.headers.location
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+        var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+        var i = 0
+        while (i < 5 && rows == 1){
+            Thread.sleep(5_000)
+            rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+            i++
+        }
+        assertThat(rows).isEqualTo(0)
+    }
+
+    @Test
+    fun `expiration time URIs gets deleted async`() {
+        val sUrl = shortUrl("http://example.com/", expiration=OffsetDateTime.now().plusSeconds(10))
+        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
+        val target = sUrl.headers.location
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+        var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+        var i = 0
+        while (i < 10 && rows == 1){
+            Thread.sleep(5_000)
+            rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+            i++
+        }
+        assertThat(rows).isEqualTo(0)
     }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
