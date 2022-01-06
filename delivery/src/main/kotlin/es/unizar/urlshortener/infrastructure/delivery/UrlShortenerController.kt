@@ -36,6 +36,7 @@ import org.springframework.web.client.RestTemplate
 import javax.validation.constraints.Min;
 
 import io.micrometer.core.annotation.Timed
+import java.time.format.DateTimeParseException
 
 /**
  * The specification of the controller.
@@ -70,8 +71,8 @@ const val CLIENTVERSION : String = "0.1"
  */
 data class ShortUrlDataIn(
     val url: String,
-    val leftUses: Int? = null,
-    val expiration: Date? = null,
+    val leftUses: String? = null,
+    val expiration: String? = null,
     val sponsor: String? = null
 )
 
@@ -83,7 +84,14 @@ data class ShortUrlDataOut(
     val properties: Map<String, Any> = emptyMap()
 )
 
-
+fun parseDate(date: String): Date {
+    try {
+        val dateTime = OffsetDateTime.parse(date, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        return Date.from(dateTime.toInstant())
+    } catch (ex: DateTimeParseException){
+        throw InvalidDateException(date)
+    }
+}
 /**
  * The implementation of the controller.
  *
@@ -127,8 +135,8 @@ class UrlShortenerControllerImpl(
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
                 sponsor = data.sponsor,
-                leftUses = data.leftUses,
-                expiration = data.expiration
+                leftUses = data.leftUses?.toInt(),
+                expiration = data.expiration?.let{parseDate(it)}
             )
         ).let {
             val h = HttpHeaders()

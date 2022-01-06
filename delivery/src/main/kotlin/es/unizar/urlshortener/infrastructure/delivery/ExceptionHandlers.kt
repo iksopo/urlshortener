@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+import java.lang.NumberFormatException
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 
 @ControllerAdvice
@@ -51,7 +53,21 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [InvalidLeftUses::class])
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun invalidLeftUses(ex: InvalidLeftUses): ErrorMessage {
-        return ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message)
+        return ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
+    }
+
+    @ResponseBody
+    @ExceptionHandler(value = [InvalidDateException::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun invalidDate(ex: InvalidDateException): ErrorMessage {
+        return ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
+    }
+
+    @ResponseBody
+    @ExceptionHandler(value = [NumberFormatException::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun invalidNumberFormat(ex: NumberFormatException): ErrorMessage {
+        return ErrorMessage(HttpStatus.BAD_REQUEST.value(), "Invalid number format used.")
     }
 }
 
