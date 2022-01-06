@@ -181,7 +181,9 @@ class HttpRequestTest {
         val response2 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response2.headers.location).isEqualTo(URI.create("https://www.google.com/"))
+
         Thread.sleep(21_000)
+
         val response3 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -266,8 +268,7 @@ class HttpRequestTest {
             data["leftUses"] = it.toString()
         }
         expiration?.let {
-            data["expiration"] = expiration.format(DateTimeFormatter.RFC_1123_DATE_TIME)
-            println(data["expiration"])
+            data["expiration"] = expiration.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         }
         return restTemplate.postForEntity(
             "http://localhost:$port/api/link",
