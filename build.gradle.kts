@@ -101,6 +101,8 @@ project(":delivery") {
 
         "implementation"("javax.validation:validation-api:2.0.1.Final")
         "implementation"("org.hibernate.validator:hibernate-validator:6.0.13.Final")
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
+
 
     }
     tasks.getByName<BootJar>("bootJar") {

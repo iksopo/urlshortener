@@ -1,42 +1,31 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import es.unizar.urlshortener.core.*
+import es.unizar.urlshortener.core.ClickProperties
+import es.unizar.urlshortener.core.InvalidDateException
+import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.*
+import io.micrometer.core.annotation.Timed
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.hateoas.server.mvc.linkTo
-import org.springframework.http.*
-import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
-import java.io.IOException
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.client.RestTemplate
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import javax.servlet.http.HttpServletRequest
-import org.springframework.ui.Model;
-import org.springframework.web.client.RestTemplate
-
-import javax.validation.constraints.Min;
-
-import io.micrometer.core.annotation.Timed
 import java.time.format.DateTimeParseException
+import java.util.*
+import javax.servlet.http.HttpServletRequest
 
 /**
  * The specification of the controller.
@@ -113,19 +102,19 @@ class UrlShortenerControllerImpl(
     @Timed(value="redirection.time")
     @GetMapping("/tiny-{id:.*}")
     override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
-        redirectUseCase.redirectTo(id).let {
+     redirectUseCase.redirectTo(id).let {
             logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
 
             val h = HttpHeaders()
 
             //Check URL is valid
-            val validationResponse = validateURIUseCase.ValidateURI(it.target)
+            /*val validationResponse = validateURIUseCase.ValidateURI(it.target)
             if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
                 return ResponseEntity(h, HttpStatus.FORBIDDEN)
             }
             if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
                 return ResponseEntity(h, HttpStatus.NOT_FOUND)
-            }
+            }*/
 
             h.location = URI.create(it.target)
             ResponseEntity<Void>(h, HttpStatus.valueOf(it.mode))
@@ -148,9 +137,8 @@ class UrlShortenerControllerImpl(
 
             //Check URL is valid
             //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
-            val validationResponse = validateURIUseCase.ValidateURI(data.url)
 
-            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
+            if(it.validation==ValidateURISTATUS.VALIDATION_FAIL_UNSAFE){
                 val response = ShortUrlDataOut(
                     url = url,
                     properties = mapOf(
@@ -159,7 +147,7 @@ class UrlShortenerControllerImpl(
                 )
                 return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.FORBIDDEN)
             }
-            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
+            if(it.validation==ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE){
                 val response = ShortUrlDataOut(
                     url = url,
                     properties = mapOf(
@@ -187,7 +175,7 @@ class RestTemplateConfig {
      * Build a RestTemplate Bean with the default configuration
      */
     @Bean
-    fun restTemplate():RestTemplate {
+    fun restTemplate(): RestTemplate {
         return RestTemplateBuilder().build()
     }
 }

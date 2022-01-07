@@ -6,15 +6,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.springframework.web.multipart.MultipartFile
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.collections.ArrayList
 
 /**
  * Given a file creates a short URL for each url in the file
@@ -61,7 +58,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                             shortUrls.add(
                                 Pair(
                                     ShortUrl(
-                                        hash = "", redirection = Redirection(lineSplitByComma[0]),
+                                        hash = "", redirection = Redirection(lineSplitByComma[0]), validation = ValidateURISTATUS.YET_TO_VALIDATE,
                                         properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                     ), "Invalid structure of line: each line must consist of three comma-separated fields even if they are empty"
                                 )
@@ -94,7 +91,10 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                     leftUses = leftUses,
                                     expiration = expiration
                                 )
-                            ).let {
+                            ).let{
+                                //TODO VALIDATE SOMEWHERE HERE
+                                it
+                            }.let {
                                 mutex.withLock { shortUrls.add(Pair(it, null)) }
                             }
                         } catch (ex: Exception) {
@@ -105,7 +105,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                         shortUrls.add(
                                             Pair(
                                                 ShortUrl(
-                                                    hash = "", redirection = Redirection(url),
+                                                    hash = "", redirection = Redirection(url), validation = ValidateURISTATUS.YET_TO_VALIDATE,
                                                     properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                                 ), ex.message
                                             )
@@ -116,7 +116,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                         shortUrls.add(
                                             Pair(
                                                 ShortUrl(
-                                                    hash = "", redirection = Redirection(url),
+                                                    hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.YET_TO_VALIDATE,
                                                     properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                                 ), "[${lineSplitByComma[2]}] cannot be parsed to a valid date"
                                             )
