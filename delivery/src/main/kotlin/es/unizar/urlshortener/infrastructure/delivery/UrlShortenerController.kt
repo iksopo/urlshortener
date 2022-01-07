@@ -68,6 +68,9 @@ const val CLIENTVERSION : String = "0.1"
 
 /**
  * Data required to create a short url.
+ * LeftUses and expiration are strings to handle parsing errors properly,
+ * if they were as Int and Date, Spring throws exceptions and catches them internally,
+ * without a proper error message.
  */
 data class ShortUrlDataIn(
     val url: String,

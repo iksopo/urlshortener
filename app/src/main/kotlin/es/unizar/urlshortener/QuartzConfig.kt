@@ -66,6 +66,11 @@ class ExpiredsDeleter: Job {
     }
 }
 
+/**
+ * Enables scheduling through Quartz, a robust scheduler.
+ * Defines a job, trigger and schedules the job to be launched every X seconds.
+ * Supports persistance (configured at quartz.properties)
+ */
 @Configuration
 @EnableScheduling
 class QuartzConfig(
@@ -73,7 +78,7 @@ class QuartzConfig(
 ){
 
     /**
-     * Get the job and define some meta-data
+     * Get the periodic cleaner job and defines some meta-data
      */
     @Bean
     fun jobDetail(): JobDetailFactoryBean {
@@ -85,6 +90,10 @@ class QuartzConfig(
         return jobDetailFactory
     }
 
+    /**
+     * Creates a factory with the autowired context
+     * @return jobFactory with application context
+     */
     @Bean
     fun springBeanJobFactory(): SpringBeanJobFactory {
         val jobFactory = AutoWiringSpringBeanJobFactory()
@@ -93,9 +102,9 @@ class QuartzConfig(
     }
 
     /**
-     * Schedule a job with all of its components and using
-     * a configuration file to establish some of the behaviour
-     * of the scheduler
+     * Schedule the deleter job with all of its components using
+     * the configuration file and sets trigger, dataSource and job
+     * details
      */
     @Bean
     fun scheduler(trigger: Trigger, job: JobDetail, quartzDataSource: DataSource): SchedulerFactoryBean {
@@ -111,14 +120,16 @@ class QuartzConfig(
     }
 
     /**
-     * Establish when to execute a job
+     * Establish when to execute a job through CronTrigger
+     * Misfire policy set to SMART, which implies not doing anything
+     * with this trigger but it could be changed to REFIRE if needed
+     * Launches the job every 10 seconds
      */
     @Bean
     fun trigger(job: JobDetail): CronTriggerFactoryBean {
         val trigger = CronTriggerFactoryBean()
         trigger.setJobDetail(job)
         trigger.setCronExpression("*/10 * * ? * * *")
-        // Refire
         trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_SMART_POLICY)
         return trigger
     }

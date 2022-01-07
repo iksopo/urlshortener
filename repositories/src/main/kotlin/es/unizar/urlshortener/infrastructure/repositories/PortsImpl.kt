@@ -23,6 +23,11 @@ class ShortUrlRepositoryServiceImpl(
     private val shortUrlEntityRepository: ShortUrlEntityRepository
 ) : ShortUrlRepositoryService {
     override fun findByKey(id: String): ShortUrl? = shortUrlEntityRepository.findByHash(id)?.toDomain()
+
+    /**
+     * Subtracts 1 to the number of uses left from [su]
+     * @return true if only the url was not expired and couldn't update uses left
+     */
     override fun updateLeftUses(su : ShortUrl) : Boolean {
         su.properties.leftUses?.let {
             val updatedRows = shortUrlEntityRepository.updateLeftUsesByHash(su.hash)
@@ -31,6 +36,10 @@ class ShortUrlRepositoryServiceImpl(
             return true
         }
     }
+
+    /**
+     * Checks if [su] has expired without checking the database
+     */
     override fun checkNotExpired(su : ShortUrl) : Boolean {
         su.properties.expiration?.let {
             val suDate = it.toInstant().atOffset(ZoneOffset.UTC)
@@ -39,6 +48,10 @@ class ShortUrlRepositoryServiceImpl(
         } ?: return true
     }
 
+    /**
+     * Deletes all expired URIs by non uses left and date
+     * @return Pair containing the number of deleted rows: {expiredDate, expiredLeftUses}
+     */
     override fun deleteExpireds() : Pair<Int, Int> {
         val now = OffsetDateTime.now()
         val expiredDate = shortUrlEntityRepository.deleteByExpirationBefore(Date.from(now.toInstant()))
