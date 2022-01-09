@@ -107,15 +107,6 @@ class UrlShortenerControllerImpl(
 
             val h = HttpHeaders()
 
-            //Check URL is valid
-            /*val validationResponse = validateURIUseCase.ValidateURI(it.target)
-            if(validationResponse==ValidateURIUseCaseResponse.UNSAFE){
-                return ResponseEntity(h, HttpStatus.FORBIDDEN)
-            }
-            if(validationResponse==ValidateURIUseCaseResponse.NOT_REACHABLE){
-                return ResponseEntity(h, HttpStatus.NOT_FOUND)
-            }*/
-
             h.location = URI.create(it.target)
             ResponseEntity<Void>(h, HttpStatus.valueOf(it.mode))
         }

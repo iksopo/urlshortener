@@ -1,24 +1,14 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
-import es.unizar.urlshortener.core.FileDoesNotExist
-import es.unizar.urlshortener.core.InvalidTypeOfFile
-import es.unizar.urlshortener.core.InvalidUrlException
-import es.unizar.urlshortener.core.RedirectionNotFound
-import org.springframework.beans.BeanInstantiationException
-import org.springframework.http.HttpHeaders
 import es.unizar.urlshortener.core.*
-import org.springframework.beans.ConversionNotSupportedException
-import org.springframework.beans.TypeMismatchException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
-import java.lang.NumberFormatException
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
 
 @ControllerAdvice
@@ -69,6 +59,21 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     fun invalidNumberFormat(ex: NumberFormatException): ErrorMessage {
         return ErrorMessage(HttpStatus.BAD_REQUEST.value(), "Invalid number format used.")
     }
+
+    @ResponseBody
+    @ExceptionHandler(value = [ValidationInProcess::class])
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    protected fun validationInProcess(ex: ValidationInProcess) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [UriUnreachable::class])
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    protected fun uriUnreachable(ex: UriUnreachable) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+
+    @ResponseBody
+    @ExceptionHandler(value = [UriUnsafe::class])
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    protected fun uriUnsafe(ex: UriUnsafe) = ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
 }
 
 data class ErrorMessage(

@@ -91,10 +91,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                     leftUses = leftUses,
                                     expiration = expiration
                                 )
-                            ).let{
-                                //TODO VALIDATE SOMEWHERE HERE
-                                it
-                            }.let {
+                            ).let {
                                 mutex.withLock { shortUrls.add(Pair(it, null)) }
                             }
                         } catch (ex: Exception) {
@@ -119,6 +116,28 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                                     hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.YET_TO_VALIDATE,
                                                     properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                                 ), "[${lineSplitByComma[2]}] cannot be parsed to a valid date"
+                                            )
+                                        )
+                                    }
+                                is UriUnsafe ->
+                                    mutex.withLock {
+                                        shortUrls.add(
+                                            Pair(
+                                                ShortUrl(
+                                                    hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.VALIDATION_FAIL_UNSAFE,
+                                                    properties = ShortUrlProperties(safe = false, ip = remoteAddr)
+                                                ), ex.message
+                                            )
+                                        )
+                                    }
+                                is UriUnreachable ->
+                                    mutex.withLock {
+                                        shortUrls.add(
+                                            Pair(
+                                                ShortUrl(
+                                                    hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE,
+                                                    properties = ShortUrlProperties(safe = false, ip = remoteAddr)
+                                                ), ex.message
                                             )
                                         )
                                     }

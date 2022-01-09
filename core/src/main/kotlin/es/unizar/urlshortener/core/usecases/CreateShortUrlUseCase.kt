@@ -53,10 +53,12 @@ class CreateShortUrlUseCaseImpl(
                 if (validationResponse.await() == ValidateURIUseCaseResponse.UNSAFE) {
                     validationResult = ValidateURISTATUS.VALIDATION_FAIL_UNSAFE
                     shortUrlRepository.deleteByKey(su.hash)
+                    throw UriUnsafe(url)
                 }
                 if (validationResponse.await() == ValidateURIUseCaseResponse.NOT_REACHABLE) {
                     validationResult = ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE
                     shortUrlRepository.deleteByKey(su.hash)
+                    throw UriUnreachable(url)
                 }
                 su.validation = validationResult
                 su
