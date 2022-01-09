@@ -5,6 +5,7 @@ import es.unizar.urlshortener.core.InvalidDateException
 import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.*
 import io.micrometer.core.annotation.Timed
+import io.swagger.annotations.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
@@ -29,6 +30,7 @@ import javax.servlet.http.HttpServletRequest
 /**
  * The specification of the controller.
  */
+@Api(value = "example", description = "Shortener API", tags = ["API to shorten URIs"])
 interface UrlShortenerController {
 
     /**
@@ -36,7 +38,18 @@ interface UrlShortenerController {
      *
      * **Note**: Delivery of use cases [RedirectUseCase] and [LogClickUseCase].
      */
-    fun redirectTo(id: String, request: HttpServletRequest): ResponseEntity<Void>
+    @ApiOperation(value = "Redirect to a shortened uri")
+    @ApiResponses(
+        value = [
+            ApiResponse(code = 200, message = "OK"),
+            ApiResponse(code = 301, message = "Redirect successful"),
+            ApiResponse(code = 400, message = "Uri is being validated"),
+            ApiResponse(code = 404, message = "Uri doesn't exist")]
+    )
+    fun redirectTo(
+        @ApiParam(value = "Id", example = "a3828e31",type = "String",required = true )
+        id: String,
+        request: HttpServletRequest): ResponseEntity<Void>
 
     /**
      * Creates a short url from details provided in [data].
@@ -53,10 +66,15 @@ interface UrlShortenerController {
  * if they were as Int and Date, Spring throws exceptions and catches them internally,
  * without a proper error message.
  */
+@ApiModel
 data class ShortUrlDataIn(
+    @ApiModelProperty(name = "URI", dataType = "String", required = true, example = "http//www.example.com")
     val url: String,
+    @ApiModelProperty(name = "Number of uses", dataType = "String", required = false, example = "4")
     val leftUses: String? = null,
+    @ApiModelProperty(name = "Days until expiration", dataType = "String", required = false, example = "123")
     val expiration: String? = null,
+    @ApiModelProperty(name = "I don't know what is this parameter so i'll hide it", dataType = "String", required = false, hidden = true)
     val sponsor: String? = null
 )
 
