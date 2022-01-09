@@ -35,7 +35,10 @@ class CreateShortUrlUseCaseImpl(
             runBlocking {
                 val validationResponse = async { validateURIUseCase.ValidateURI(url) }
 
-                val id: String = hashService.hasUrl(url)
+                var id: String = hashService.hasUrl(url)
+                if (data.leftUses != null || data.expiration != null) {
+                    id += hashService.hasUrl((System.currentTimeMillis()).toString())
+                }
                 var su = ShortUrl(
                     hash = id,
                     redirection = Redirection(target = url),
