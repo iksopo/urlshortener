@@ -21,7 +21,7 @@ data class ShortUrl(
     val redirection: Redirection,
     val created: OffsetDateTime = OffsetDateTime.now(),
     val properties: ShortUrlProperties = ShortUrlProperties(),
-    var validation: ValidateURISTATUS
+    var validation: ValidateURISTATUS = ValidateURISTATUS.YET_TO_VALIDATE
 )
 
 /**

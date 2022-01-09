@@ -113,7 +113,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                         shortUrls.add(
                                             Pair(
                                                 ShortUrl(
-                                                    hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.YET_TO_VALIDATE,
+                                                    hash = "", redirection = Redirection(url), validation = ValidateURISTATUS.YET_TO_VALIDATE,
                                                     properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                                 ), "[${lineSplitByComma[2]}] cannot be parsed to a valid date"
                                             )
@@ -124,7 +124,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                         shortUrls.add(
                                             Pair(
                                                 ShortUrl(
-                                                    hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.VALIDATION_FAIL_UNSAFE,
+                                                    hash = "", redirection = Redirection(url), validation = ValidateURISTATUS.VALIDATION_FAIL_UNSAFE,
                                                     properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                                 ), ex.message
                                             )
@@ -135,7 +135,7 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                         shortUrls.add(
                                             Pair(
                                                 ShortUrl(
-                                                    hash = "", redirection = Redirection(url),validation = ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE,
+                                                    hash = "", redirection = Redirection(url), validation = ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE,
                                                     properties = ShortUrlProperties(safe = false, ip = remoteAddr)
                                                 ), ex.message
                                             )
