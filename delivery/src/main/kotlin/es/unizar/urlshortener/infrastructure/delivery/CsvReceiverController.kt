@@ -12,7 +12,6 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 import javax.servlet.http.HttpServletRequest
@@ -33,11 +32,12 @@ class CsvReceiverController(
         return "uploadform"
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
+    //@ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
     fun uploadCsv(@RequestParam("file") file: MultipartFile, @RequestParam("uuid") uuid:String,
                 request: HttpServletRequest, response: HttpServletResponse) {
         val listener = sseRepository.createProgressListener(uuid)
+        response.status = HttpStatus.CREATED.value()
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr, listener).let {
             val newLines = ArrayList<String>()
             for (i in 0 until it.urls.size) {
