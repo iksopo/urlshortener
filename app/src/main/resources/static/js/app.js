@@ -1,3 +1,21 @@
+// https://coderedirect.com/questions/52077/how-to-iso-8601-format-a-date-with-timezone-offset-in-javascript
+function toIsoString(date) {
+  var tzo = -date.getTimezoneOffset(),
+      dif = tzo >= 0 ? '+' : '-',
+      pad = function(num) {
+          var norm = Math.floor(Math.abs(num));
+          return (norm < 10 ? '0' : '') + norm;
+      };
+
+  return date.getFullYear() +
+      '-' + pad(date.getMonth() + 1) +
+      '-' + pad(date.getDate()) +
+      'T' + pad(date.getHours()) +
+      ':' + pad(date.getMinutes()) +
+      ':' + pad(date.getSeconds()) +
+      dif + pad(tzo / 60) +
+      ':' + pad(tzo % 60);
+}
 
 $(document).ready(
     () => {
@@ -16,7 +34,7 @@ $(document).ready(
                    let currentTime = new Date()
                    let minutes = parseInt(document.getElementById("expiration").value)
                    let expirationDate = new Date(currentTime.getTime() + minutes * 60000)
-                   formData.expiration = expirationDate.toGMTString()
+                   formData.expiration = toIsoString(expirationDate)
                 }
                 console.log("fData", formData)
 

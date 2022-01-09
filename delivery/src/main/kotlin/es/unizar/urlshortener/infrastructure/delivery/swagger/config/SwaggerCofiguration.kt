@@ -29,7 +29,7 @@ class SwaggerCofiguration {
         return Docket(DocumentationType.SWAGGER_2)
             .apiInfo(getApiInfo())
             .select()
-            .apis(RequestHandlerSelectors.any())
+            .apis(RequestHandlerSelectors.basePackage("es.unizar.urlshortener.infrastructure.delivery"))
             .paths(PathSelectors.any())
             .build()
     }

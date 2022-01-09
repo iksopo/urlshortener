@@ -8,15 +8,11 @@ import es.unizar.urlshortener.infrastructure.repositories.ClickEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ClickRepositoryServiceImpl
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServiceImpl
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.quartz.QuartzDataSource
-import org.springframework.boot.jdbc.DataSourceBuilder
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import javax.sql.DataSource
-
 import io.micrometer.core.aop.TimedAspect
 import io.micrometer.core.instrument.MeterRegistry
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
 /**
  * Wires use cases with service implementations, and services implementations with repositories.
@@ -60,7 +56,7 @@ class ApplicationConfiguration(
     fun createShortUrlsFromCsvUseCase() = CreateShortUrlsFromCsvUseCaseImpl(fileStorage, createShortUrlUseCase())
 
     @Bean
-    fun ValidateURIUseCase() = ValidateURIUseCaseImpl()
+    fun validateURIUseCase() = ValidateURIUseCaseImpl()
 
     @Bean
     fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)

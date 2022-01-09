@@ -1,5 +1,6 @@
 package es.unizar.urlshortener.core
 
+import es.unizar.urlshortener.core.usecases.ValidateURISTATUS
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -19,7 +20,8 @@ data class ShortUrl(
     val hash: String,
     val redirection: Redirection,
     val created: OffsetDateTime = OffsetDateTime.now(),
-    val properties: ShortUrlProperties = ShortUrlProperties()
+    val properties: ShortUrlProperties = ShortUrlProperties(),
+    var validation: ValidateURISTATUS = ValidateURISTATUS.YET_TO_VALIDATE
 )
 
 /**
@@ -41,7 +43,7 @@ data class ShortUrlProperties(
     val owner: String? = null,
     val country: String? = null,
     val leftUses: Int? = null,
-    val expiration: Date? = null
+    val expiration: Date? = null,
 )
 
 /**

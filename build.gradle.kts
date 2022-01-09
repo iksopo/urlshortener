@@ -2,23 +2,32 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
+repositories {
+    mavenCentral()
+}
 
 plugins {
     id("org.springframework.boot") version "2.5.5" apply false
     id("io.spring.dependency-management") version "1.0.11.RELEASE" apply false
+    id("org.jetbrains.dokka") version "1.6.10"
     kotlin("jvm") version "1.5.31" apply false
     kotlin("plugin.spring") version "1.5.31" apply false
     kotlin("plugin.jpa") version "1.5.31" apply false
 }
 
+
 group = "es.unizar"
 version = "0.0.1-SNAPSHOT"
 
 subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
     repositories {
         mavenCentral()
     }
+    apply {
+        plugin("org.jetbrains.kotlin.jvm")
+        plugin("org.jetbrains.dokka")
+    }
+    val dokkaPlugin by configurations
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xjsr305=strict")
@@ -30,6 +39,7 @@ subprojects {
     }
     dependencies {
         "implementation"("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+        dokkaPlugin("org.jetbrains.dokka:versioning-plugin:1.6.0")
     }
 }
 
@@ -91,6 +101,8 @@ project(":delivery") {
 
         "implementation"("javax.validation:validation-api:2.0.1.Final")
         "implementation"("org.hibernate.validator:hibernate-validator:6.0.13.Final")
+        "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
+
 
     }
     tasks.getByName<BootJar>("bootJar") {

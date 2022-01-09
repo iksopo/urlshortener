@@ -1,5 +1,6 @@
 package es.unizar.urlshortener.infrastructure.repositories
 
+import es.unizar.urlshortener.core.usecases.ValidateURISTATUS
 import java.time.OffsetDateTime
 import java.util.*
 import javax.persistence.*
@@ -33,6 +34,7 @@ class ShortUrlEntity(
     val target: String,
     val sponsor: String?,
     val created: OffsetDateTime,
+    val validation: ValidateURISTATUS,
     val owner: String?,
     val mode: Int,
     val safe: Boolean,

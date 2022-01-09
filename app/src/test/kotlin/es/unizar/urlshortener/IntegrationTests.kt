@@ -3,6 +3,7 @@ package es.unizar.urlshortener
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -12,8 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.*
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.jdbc.JdbcTestUtils
@@ -177,8 +180,8 @@ class HttpRequestTest {
 
 
     @Test
-    fun `creates an url that expires in 14 seconds`() {
-        val sUrl = shortUrl("https://www.google.com/", null, OffsetDateTime.now().plusSeconds(60))
+    fun `creates an url that expires in 20 seconds`() {
+        val sUrl = shortUrl("https://www.google.com/", null, OffsetDateTime.now().plusSeconds(20))
         println(sUrl)
         val target = sUrl.headers.location
         require(target != null)
@@ -190,7 +193,8 @@ class HttpRequestTest {
         assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response2.headers.location).isEqualTo(URI.create("https://www.google.com/"))
 
-        Thread.sleep(65_000)
+        Thread.sleep(21_000)
+
         val response3 = restTemplate.getForEntity(target, String::class.java)
         assertThat(response3.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
     }
@@ -285,10 +289,7 @@ class HttpRequestTest {
             .andExpect(MockMvcResultMatchers.status().isCreated)
             .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
 
-        val firstTarget = result.response.getHeaderValue("Location").toString().replaceFirst("localhost", "localhost:$port")
-        val response = restTemplate.getForEntity(firstTarget, String::class.java)
-        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
-        assertThat(response.headers.location).isEqualTo(URI.create("http://unizar.es"))
+        assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
@@ -311,7 +312,7 @@ class HttpRequestTest {
             .andExpect(MockMvcResultMatchers.status().isCreated)
             .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
 
-        assertThat(result.response.getHeaderValue("Location").toString()).isEqualTo("http://localhost/tiny-")
+        assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
@@ -334,7 +335,7 @@ class HttpRequestTest {
             .andExpect(MockMvcResultMatchers.status().isCreated)
             .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
 
-        assertThat(result.response.getHeaderValue("Location").toString()).isEqualTo("http://localhost/tiny-")
+        assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://unizar.es", "https://google.es", "https://moodle.unizar.es")
@@ -356,10 +357,7 @@ class HttpRequestTest {
             .andExpect(MockMvcResultMatchers.status().isCreated)
             .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
 
-        val firstTarget = result.response.getHeaderValue("Location").toString().replaceFirst("localhost", "localhost:$port")
-        val response = restTemplate.getForEntity(firstTarget, String::class.java)
-        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
-        assertThat(response.headers.location).isEqualTo(URI.create("http://www.google.es"))
+        assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://www.google.es", "http://unizar.es", "https://moodle.unizar.es", "invalid line",
@@ -372,6 +370,40 @@ class HttpRequestTest {
         checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls, 83)
     }
 
+    @Test
+    fun `expiration uses URIs gets deleted async`() {
+        val sUrl = shortUrl("http://example.com/", 1)
+        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
+        val target = sUrl.headers.location
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+        var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+        var i = 0
+        while (i < 5 && rows == 1){
+            Thread.sleep(5_000)
+            rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+            i++
+        }
+        assertThat(rows).isEqualTo(0)
+    }
+
+    @Test
+    fun `expiration time URIs gets deleted async`() {
+        val sUrl = shortUrl("http://example.com/", expiration=OffsetDateTime.now().plusSeconds(10))
+        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
+        val target = sUrl.headers.location
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+        var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+        var i = 0
+        while (i < 10 && rows == 1){
+            Thread.sleep(5_000)
+            rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+            i++
+        }
+        assertThat(rows).isEqualTo(0)
+    }
+
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
@@ -382,8 +414,7 @@ class HttpRequestTest {
             data["leftUses"] = it.toString()
         }
         expiration?.let {
-            data["expiration"] = expiration.format(DateTimeFormatter.RFC_1123_DATE_TIME)
-            println(data["expiration"])
+            data["expiration"] = expiration.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         }
         return restTemplate.postForEntity(
             "http://localhost:$port/api/link",

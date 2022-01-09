@@ -2,16 +2,13 @@ package es.unizar.urlshortener.core.usecases
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import es.unizar.urlshortener.core.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.MediaType
-import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestTemplate
 import java.net.URI
-import java.util.*
 
 
 enum class ValidateURIUseCaseResponse {
@@ -20,16 +17,20 @@ enum class ValidateURIUseCaseResponse {
     UNSAFE
 }
 
-@Value("\${google.API.value}")
-const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
-const val FINDURL : String = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
-const val CLIENTNAME : String = "URIShortenerTestApp"
-const val CLIENTVERSION : String = "0.1"
+enum class ValidateURISTATUS {
+    VALIDATION_PASS,
+    VALIDATION_FAIL_UNREACHABLE,
+    VALIDATION_FAIL_UNSAFE,
+    YET_TO_VALIDATE,
+    VALIDATION_IN_PROGRESS
+}
+
+
 
 interface ValidateURIUseCase {
-    fun ValidateURI(uri: String):ValidateURIUseCaseResponse
-    fun ReachableURI(uri: String):ValidateURIUseCaseResponse
-    fun SafeURI(uri: String):ValidateURIUseCaseResponse
+    suspend fun ValidateURI(uri: String):ValidateURIUseCaseResponse
+    suspend fun ReachableURI(uri: String):ValidateURIUseCaseResponse
+    suspend fun SafeURI(uri: String):ValidateURIUseCaseResponse
 }
 
 class ValidateURIUseCaseImpl(
@@ -38,14 +39,25 @@ class ValidateURIUseCaseImpl(
     @Autowired
     lateinit var restTemplate: RestTemplate
 
-    override fun ValidateURI(uri: String): ValidateURIUseCaseResponse {
-        val resp1 = SafeURI(uri)
-        return if(resp1 == ValidateURIUseCaseResponse.OK) ReachableURI(uri) else resp1
+    @Value("\${google.API.value}")
+    lateinit var  gooval: String
+    @Value("\${google.API.url}")
+    lateinit var  goourl: String
+    @Value("\${google.API.clientName}")
+    lateinit var  gooclient: String
+    @Value("\${google.API.clientVersion}")
+    lateinit var  gooclientVersion: String
+
+    override suspend fun ValidateURI(uri: String): ValidateURIUseCaseResponse = coroutineScope  {
+        val resp1 = async { SafeURI(uri) }
+        val resp2 = async { ReachableURI(uri) }
+        if(resp1.await() == ValidateURIUseCaseResponse.OK) resp2.await() else resp1.await()
     }
 
-    override fun ReachableURI(uri: String): ValidateURIUseCaseResponse {
+    override suspend fun ReachableURI(uri: String): ValidateURIUseCaseResponse {
         return try {
             val response = restTemplate.getForEntity(uri, String::class.java)
+            println("Reachable")
             if (response.statusCode.is2xxSuccessful) ValidateURIUseCaseResponse.OK else ValidateURIUseCaseResponse.NOT_REACHABLE
         }catch (ex: Exception){
             ValidateURIUseCaseResponse.NOT_REACHABLE
@@ -53,11 +65,11 @@ class ValidateURIUseCaseImpl(
 
     }
 
-    override fun SafeURI(uri: String): ValidateURIUseCaseResponse {
+    override suspend fun SafeURI(uri: String): ValidateURIUseCaseResponse {
         val mapper = jacksonObjectMapper()
 
         val safeRequest = ThreatMatchesFindRequest(
-            ClientInfo(CLIENTNAME, CLIENTVERSION),
+            ClientInfo(gooclient, gooclientVersion),
             ThreatInfo(
                 listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION,ThreatType.UNWANTED_SOFTWARE),
                 listOf(PlatformType.WINDOWS),
@@ -66,10 +78,15 @@ class ValidateURIUseCaseImpl(
             )
         )
         val serialized = mapper.writeValueAsString(safeRequest)
-        val httpResponse = restTemplate.postForObject(URI(FINDURL), HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
+        val httpResponse = restTemplate.postForObject(URI(goourl+gooval), HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
+        //delay(10000)
         if(!httpResponse?.matches.isNullOrEmpty()){
+            println("Unsafe")
             return ValidateURIUseCaseResponse.UNSAFE
         }
+
+        println("Safe")
+
 
         return ValidateURIUseCaseResponse.OK
     }

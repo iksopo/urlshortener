@@ -1,10 +1,7 @@
 package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.*
-import es.unizar.urlshortener.core.usecases.CreateShortUrlUseCase
-import es.unizar.urlshortener.core.usecases.LogClickUseCase
-import es.unizar.urlshortener.core.usecases.RedirectUseCase
-import es.unizar.urlshortener.core.usecases.ValidateURIUseCaseImpl
+import es.unizar.urlshortener.core.usecases.*
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.never
@@ -20,6 +17,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import org.springframework.web.client.RestTemplate
+import java.time.OffsetDateTime
 
 @WebMvcTest
 @ContextConfiguration(classes = [
@@ -71,7 +69,9 @@ class UrlShortenerControllerTest {
         given(createShortUrlUseCase.create(
             url = "http://example.com/",
             data = ShortUrlProperties(ip = "127.0.0.1")
-        )).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/")))
+        )).willReturn(ShortUrl("f684a3c4", Redirection("http://example.com/"), OffsetDateTime.now(),
+            ShortUrlProperties(),ValidateURISTATUS.VALIDATION_PASS
+        ))
 
         mockMvc.perform(post("/api/link")
             .param("url", "http://example.com/")
