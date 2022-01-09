@@ -1,8 +1,0 @@
-http://unizar.es,http://localhost/tiny-52531b66,
-https://unizar.es,http://localhost/tiny-b41baf49,
-https://moodle.unizar.es,http://localhost/tiny-383f1c34,
-invalid line,,[invalid line] does not follow a supported schema
-http://www.google.es,http://localhost/tiny-16eea967,
-https://www.google.com,,[-1] is not a valid number of uses: it must be a number greater than 0
-https://www.google.com,,[abdc] is not a valid number of uses: it must be a number greater than 0
-https://www.google.com,,[abcd] cannot be parsed to a valid date

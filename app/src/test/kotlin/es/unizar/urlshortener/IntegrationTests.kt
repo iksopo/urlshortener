@@ -1,51 +1,34 @@
 package es.unizar.urlshortener
 
-import es.unizar.urlshortener.core.InvalidTypeOfFile
-import es.unizar.urlshortener.core.InvalidUrlException
-import es.unizar.urlshortener.core.ShortUrlProperties
-import es.unizar.urlshortener.core.SseEmitterProgressListener
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import org.mockito.BDDMockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
-import org.springframework.boot.test.context.assertj.AssertableReactiveWebApplicationContext
 import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.*
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.jdbc.JdbcTestUtils
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.MockMvcBuilder
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.util.AssertionErrors.*
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
-import org.springframework.web.client.RestTemplate
 import org.springframework.web.context.WebApplicationContext
-import org.springframework.web.multipart.MultipartFile
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.io.path.absolutePathString
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -295,14 +278,24 @@ class HttpRequestTest {
         val sentFile = fileToSend("firstUrlIsValid.csv")
         val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
 
-        mockMvc.perform(
+        val result = mockMvc.perform(
             multipart("/csv")
                 .file(sentFile)
                 .param("uuid", uuid))
             .andExpect(MockMvcResultMatchers.status().isCreated)
-            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
-            //.andExpect(MockMvcResultMatchers.content().string(String(fileBytes("shortForFirstIsValid.csv"))))
-            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForFirstIsValid.csv")))
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
+
+        val firstTarget = result.response.getHeaderValue("Location").toString().replaceFirst("localhost", "localhost:$port")
+        val response = restTemplate.getForEntity(firstTarget, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://unizar.es"))
+
+        val fileContent = result.response.contentAsString
+        val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
+            "http://www.google.es", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
+        val errorUrls = listOf("invalid line", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
+        val createdButErrorUrls = listOf("https://moodle.unizar.es")
+        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
     }
 
     @Test
@@ -311,13 +304,21 @@ class HttpRequestTest {
         val sentFile = fileToSend("firstUrlIsInvalid.csv")
         val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
 
-        mockMvc.perform(
+        val result = mockMvc.perform(
             multipart("/csv")
                 .file(sentFile)
                 .param("uuid", uuid))
             .andExpect(MockMvcResultMatchers.status().isCreated)
-            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
-            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForFirstIsInvalid.csv")))
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
+
+        assertThat(result.response.getHeaderValue("Location").toString()).isEqualTo("http://localhost/tiny-")
+
+        val fileContent = result.response.contentAsString
+        val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
+            "http://www.google.es", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
+        val errorUrls = listOf("invalid line", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
+        val createdButErrorUrls = listOf("http://www.google.es")
+        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
     }
 
     @Test
@@ -326,13 +327,20 @@ class HttpRequestTest {
         val sentFile = fileToSend("firstLineIsIncomplete.csv")
         val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
 
-        mockMvc.perform(
+        val result = mockMvc.perform(
             multipart("/csv")
                 .file(sentFile)
                 .param("uuid", uuid))
             .andExpect(MockMvcResultMatchers.status().isCreated)
-            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
-            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForFirstIsIncomplete.csv")))
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
+
+        assertThat(result.response.getHeaderValue("Location").toString()).isEqualTo("http://localhost/tiny-")
+
+        val fileContent = result.response.contentAsString
+        val requestedUrls = listOf("http://unizar.es", "https://google.es", "https://moodle.unizar.es")
+        val errorUrls = listOf("http://unizar.es")
+        val createdButErrorUrls = ArrayList<String>()
+        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
     }
 
     @Test
@@ -341,13 +349,27 @@ class HttpRequestTest {
         val sentFile = fileToSend("aLotOfUrls.csv")
         val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
 
-        mockMvc.perform(
+        val result = mockMvc.perform(
             multipart("/csv")
                 .file(sentFile)
                 .param("uuid", uuid))
             .andExpect(MockMvcResultMatchers.status().isCreated)
-            .andExpect(MockMvcResultMatchers.content().contentType("text/csv"))
-            .andExpect(MockMvcResultMatchers.content().bytes(fileBytes("shortForALotOfUrls.csv")))
+            .andExpect(MockMvcResultMatchers.content().contentType("text/csv")).andReturn()
+
+        val firstTarget = result.response.getHeaderValue("Location").toString().replaceFirst("localhost", "localhost:$port")
+        val response = restTemplate.getForEntity(firstTarget, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://www.google.es"))
+
+        val fileContent = result.response.contentAsString
+        val requestedUrls = listOf("http://www.google.es", "http://unizar.es", "https://moodle.unizar.es", "invalid line",
+            "https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#mutual-exclusion",
+            "https://developer.android.com/reference/kotlin/java/util/concurrent/atomic/AtomicInteger",
+            "https://www.youtube.com/", "https://github.com/", "https://duckduckgo.com/", "https://twitter.com/",
+            "https://www.mecanografia-online.com/ES/Aspx/SelectExerciseWithCharacters.aspx", "https://www.netflix.com/")
+        val errorUrls = listOf("invalid line")
+        val createdButErrorUrls = ArrayList<String>()
+        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls, 83)
     }
 
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
@@ -389,6 +411,45 @@ class HttpRequestTest {
     private fun fileBytes(filename: String): ByteArray {
         val path = Paths.get("src/test/resources/$filename")
         return Files.readAllBytes(path)
+    }
+
+    private fun checkFile(fileContent: String, requestedUrls: List<String>, errorUrls: List<String>, createdButErrorUrls: List<String>, nReps: Int = 1) {
+        runBlocking {
+            for (url in requestedUrls) {
+                launch {
+                    val regex = "$url,[^,]*,[^,]*\n".toRegex()
+                    val matches = regex.findAll(fileContent)
+                    var found = 0
+                    for (match in matches) {
+                        val lineSplit = match.value.split(",")
+                        found++
+
+                        if (errorUrls.contains(url)) {
+                            assertThat(lineSplit[1]).isEmpty()
+                            assertThat(lineSplit[2]).isNotEqualTo("\n")
+                            assertThat(match.value).isEqualTo(matches.first().value)
+                        } else {
+                            assertThat(lineSplit[1]).isNotEmpty
+                            assertThat(lineSplit[2]).isEqualTo("\n")
+
+                            launch {
+                                val target = lineSplit[1].replaceFirst("localhost", "localhost:$port")
+                                val response = restTemplate.getForEntity(target, String::class.java)
+                                if (createdButErrorUrls.contains(url)) {
+                                    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+                                } else {
+                                    assertEquals("Should have redirected to $url.",
+                                        HttpStatus.TEMPORARY_REDIRECT, response.statusCode)
+                                    assertThat(response.headers.location).isEqualTo(URI.create(url))
+                                }
+                            }
+                        }
+                    }
+                    assertNotEquals("$url not present in returned file", 0, found)
+                    assertEquals("$url appears an incorrect number of times", nReps, found)
+                }
+            }
+        }
     }
 
 }
