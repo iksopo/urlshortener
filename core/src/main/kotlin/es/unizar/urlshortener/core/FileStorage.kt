@@ -47,6 +47,7 @@ class FileStorageImpl: FileStorage {
 
     override fun deleteFile(filename: String) {
         Files.deleteIfExists(rootLocation.resolve(filename))
+        numFiles.set(0)
     }
 
     override fun deleteAll() {
