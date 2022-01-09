@@ -6,7 +6,6 @@ import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.*
 import io.micrometer.core.annotation.Timed
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -47,13 +46,6 @@ interface UrlShortenerController {
     fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut>
 
 }
-
-@Value("\${google.API.value}")
-const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
-const val FINDURL : String = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
-const val CLIENTNAME : String = "URIShortenerTestApp"
-const val CLIENTVERSION : String = "0.1"
-
 
 /**
  * Data required to create a short url.

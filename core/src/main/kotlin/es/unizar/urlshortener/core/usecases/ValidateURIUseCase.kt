@@ -25,11 +25,7 @@ enum class ValidateURISTATUS {
     VALIDATION_IN_PROGRESS
 }
 
-@Value("\${google.API.value}")
-const val APIKEY : String = "AIzaSyBS26eLBuGZEmscRx9AmUVG8O_YaiwgDu0"
-const val FINDURL : String = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=$APIKEY"
-const val CLIENTNAME : String = "URIShortenerTestApp"
-const val CLIENTVERSION : String = "0.1"
+
 
 interface ValidateURIUseCase {
     suspend fun ValidateURI(uri: String):ValidateURIUseCaseResponse
@@ -42,6 +38,15 @@ class ValidateURIUseCaseImpl(
 
     @Autowired
     lateinit var restTemplate: RestTemplate
+
+    @Value("\${google.API.value}")
+    lateinit var  gooval: String
+    @Value("\${google.API.url}")
+    lateinit var  goourl: String
+    @Value("\${google.API.clientName}")
+    lateinit var  gooclient: String
+    @Value("\${google.API.clientVersion}")
+    lateinit var  gooclientVersion: String
 
     override suspend fun ValidateURI(uri: String): ValidateURIUseCaseResponse = coroutineScope  {
         val resp1 = async { SafeURI(uri) }
@@ -64,7 +69,7 @@ class ValidateURIUseCaseImpl(
         val mapper = jacksonObjectMapper()
 
         val safeRequest = ThreatMatchesFindRequest(
-            ClientInfo(CLIENTNAME, CLIENTVERSION),
+            ClientInfo(gooclient, gooclientVersion),
             ThreatInfo(
                 listOf(ThreatType.MALWARE,ThreatType.POTENTIALLY_HARMFUL_APPLICATION,ThreatType.UNWANTED_SOFTWARE),
                 listOf(PlatformType.WINDOWS),
@@ -73,7 +78,7 @@ class ValidateURIUseCaseImpl(
             )
         )
         val serialized = mapper.writeValueAsString(safeRequest)
-        val httpResponse = restTemplate.postForObject(URI(FINDURL), HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
+        val httpResponse = restTemplate.postForObject(URI(goourl+gooval), HttpEntity(serialized),ThreatMatchesFindResponse::class.java)
         //delay(10000)
         if(!httpResponse?.matches.isNullOrEmpty()){
             println("Unsafe")
