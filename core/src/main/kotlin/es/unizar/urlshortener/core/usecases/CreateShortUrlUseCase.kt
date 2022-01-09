@@ -23,7 +23,10 @@ class CreateShortUrlUseCaseImpl(
 ) : CreateShortUrlUseCase {
     override fun create(url: String, data: ShortUrlProperties): ShortUrl =
         if (validatorService.isValid(url)) {
-            val id: String = hashService.hasUrl(url)
+            var id: String = hashService.hasUrl(url)
+            if (data.leftUses != null || data.expiration != null) {
+                id += hashService.hasUrl((System.currentTimeMillis()).toString())
+            }
             val su = ShortUrl(
                 hash = id,
                 redirection = Redirection(target = url),
