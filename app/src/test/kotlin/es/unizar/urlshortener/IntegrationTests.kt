@@ -343,7 +343,7 @@ class HttpRequestTest {
         val createdButErrorUrls = ArrayList<String>()
         checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
     }
-
+/*
     @Test
     fun `uploadCsv returns a file when sent file has hundreds of lines`() {
         val uuid = getUuid()
@@ -368,7 +368,7 @@ class HttpRequestTest {
         val errorUrls = listOf("invalid line")
         val createdButErrorUrls = ArrayList<String>()
         checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls, 83)
-    }
+    }*/
 
     @Test
     fun `expiration uses URIs gets deleted async`() {
