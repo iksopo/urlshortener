@@ -351,7 +351,7 @@ class HttpRequestTest {
     }
 /*
     @Test
-    fun `uploadCsv returns a file when sent file has hundreds of lines`() {
+    fun `uploadCsv returns a file when sent file has more than a hundred lines`() {
         val uuid = getUuid()
         val sentFile = fileToSend("aLotOfUrls.csv")
         val mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -365,6 +365,7 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
+        Thread.sleep(120_000)
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://www.google.es", "http://unizar.es", "https://moodle.unizar.es", "invalid line",
             "https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#mutual-exclusion",
@@ -373,7 +374,7 @@ class HttpRequestTest {
             "https://www.mecanografia-online.com/ES/Aspx/SelectExerciseWithCharacters.aspx", "https://www.netflix.com/")
         val errorUrls = listOf("invalid line")
         val createdButErrorUrls = ArrayList<String>()
-        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls, 83)
+        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls, 24)
     }*/
 
     @Test
@@ -463,25 +464,26 @@ class HttpRequestTest {
                         val lineSplit = match.value.split(",")
                         found++
 
-                        if (errorUrls.contains(url)) {
-                            assertThat(lineSplit[1]).isEmpty()
-                            assertThat(lineSplit[2]).isNotEqualTo("\n")
-                            assertThat(match.value).isEqualTo(matches.first().value)
-                        } else {
-                            assertThat(lineSplit[1]).isNotEmpty
-                            assertThat(lineSplit[2]).isEqualTo("\n")
+                        if (found == 1) {
+                            if (errorUrls.contains(url)) {
+                                assertThat(lineSplit[1]).isEmpty()
+                                assertThat(lineSplit[2]).isNotEqualTo("\n")
+                            } else {
+                                assertThat(lineSplit[1]).isNotEmpty
+                                assertThat(lineSplit[2]).isEqualTo("\n")
 
-                            launch {
                                 val target = lineSplit[1].replaceFirst("localhost", "localhost:$port")
                                 val response = restTemplate.getForEntity(target, String::class.java)
                                 if (createdButErrorUrls.contains(url)) {
                                     assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
                                 } else {
-                                    assertEquals("Should have redirected to $url.",
+                                    assertEquals("Should have redirected to $url. Message: ${response.body}",
                                         HttpStatus.TEMPORARY_REDIRECT, response.statusCode)
                                     assertThat(response.headers.location).isEqualTo(URI.create(url))
                                 }
                             }
+                        } else {
+                            assertThat(match.value).isEqualTo(matches.first().value)
                         }
                     }
                     assertNotEquals("$url not present in returned file", 0, found)
