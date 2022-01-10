@@ -6,6 +6,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.PropertySource
 import org.springframework.http.HttpEntity
 import org.springframework.web.client.RestTemplate
 import java.net.URI
@@ -32,14 +34,15 @@ interface ValidateURIUseCase {
     suspend fun ReachableURI(uri: String):ValidateURIUseCaseResponse
     suspend fun SafeURI(uri: String):ValidateURIUseCaseResponse
 }
-
-class ValidateURIUseCaseImpl(
+@Configuration
+@PropertySource("classpath:local.properties")
+open class ValidateURIUseCaseImpl(
 ) : ValidateURIUseCase {
 
     @Autowired
     lateinit var restTemplate: RestTemplate
 
-    @Value("\${google.API.value}")
+    @Value("\${google_API_value}")
     lateinit var  gooval: String
     @Value("\${google.API.url}")
     lateinit var  goourl: String
