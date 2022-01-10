@@ -2,6 +2,7 @@ package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.ClickProperties
 import es.unizar.urlshortener.core.InvalidDateException
+import es.unizar.urlshortener.core.NullUrl
 import es.unizar.urlshortener.core.ShortUrlProperties
 import es.unizar.urlshortener.core.usecases.*
 import io.micrometer.core.annotation.Timed
@@ -48,7 +49,7 @@ interface UrlShortenerController {
     )
     fun redirectTo(
         @ApiParam(value = "Id", example = "a3828e31",type = "String",required = true )
-        id: String,
+        id: String?,
         request: HttpServletRequest): ResponseEntity<Void>
 
     /**
@@ -66,23 +67,26 @@ interface UrlShortenerController {
  * if they were as Int and Date, Spring throws exceptions and catches them internally,
  * without a proper error message.
  */
-@ApiModel
+@ApiModel(value="Input ShortUrl info entity")
 data class ShortUrlDataIn(
-    @ApiModelProperty(name = "URI", dataType = "String", required = true, example = "http//www.example.com")
-    val url: String,
-    @ApiModelProperty(name = "Number of uses", dataType = "String", required = false, example = "4")
+    @ApiModelProperty(name = "url", dataType = "String", required = true, example = "http//www.example.com")
+    val url: String? = null,
+    @ApiModelProperty(name = "leftUses", dataType = "Integer", required = false, example = "4")
     val leftUses: String? = null,
-    @ApiModelProperty(name = "Days until expiration", dataType = "String", required = false, example = "123")
+    @ApiModelProperty(name = "expiration", dataType = "Date ISO_OFFSET_DATE_TIME format", required = false, example = "123")
     val expiration: String? = null,
-    @ApiModelProperty(name = "I don't know what is this parameter so i'll hide it", dataType = "String", required = false, hidden = true)
+    @ApiModelProperty(name = "sponsor", dataType = "String", required = false, hidden = true)
     val sponsor: String? = null
 )
 
 /**
  * Data returned after the creation of a short url.
  */
+@ApiModel(value="Output ShortUrl info entity")
 data class ShortUrlDataOut(
+    @ApiModelProperty(name = "url", dataType = "String", example = "tiny-6f12359f")
     val url: URI? = null,
+    @ApiModelProperty(name = "properties", dataType = "Map with some properties and metadata")
     val properties: Map<String, Any> = emptyMap()
 )
 
@@ -111,8 +115,9 @@ class UrlShortenerControllerImpl(
 
     @Timed(value="redirection.time")
     @GetMapping("/tiny-{id:.*}")
-    override fun redirectTo(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Void> =
-     redirectUseCase.redirectTo(id).let {
+    override fun redirectTo(@ApiParam(name = "id", required = true,  value = "Shortened url", example="tiny-6f12359f")
+                                @PathVariable id: String?, request: HttpServletRequest): ResponseEntity<Void> =
+     redirectUseCase.redirectTo(id?: throw NullUrl()).let {
             logClickUseCase.logClick(id, ClickProperties(ip = request.remoteAddr))
 
             val h = HttpHeaders()
@@ -124,7 +129,7 @@ class UrlShortenerControllerImpl(
     @PostMapping("/api/link", consumes = [ MediaType.APPLICATION_FORM_URLENCODED_VALUE ])
     override fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut> =
         createShortUrlUseCase.create(
-            url = data.url,
+            url = data.url ?: throw NullUrl(),
             data = ShortUrlProperties(
                 ip = request.remoteAddr,
                 sponsor = data.sponsor,
