@@ -3,7 +3,6 @@ package es.unizar.urlshortener
 import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.apache.http.impl.client.HttpClientBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -13,14 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.http.*
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.jdbc.JdbcTestUtils
-import org.springframework.test.util.AssertionErrors.*
+import org.springframework.test.util.AssertionErrors.assertEquals
+import org.springframework.test.util.AssertionErrors.assertNotEquals
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -74,6 +72,7 @@ class HttpRequestTest {
     fun `redirectTo returns a redirect when the key exists`() {
         val target = shortUrl("http://example.com/").headers.location
         require(target != null)
+        Thread.sleep(21_000)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
@@ -116,6 +115,7 @@ class HttpRequestTest {
         val sUrl = shortUrl("http://example.com/", 1)
         val target = sUrl.headers.location
         require(target != null)
+        Thread.sleep(21_000)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
@@ -129,6 +129,7 @@ class HttpRequestTest {
         val sUrl = shortUrl("http://example.com/", 2)
         val target = sUrl.headers.location
         require(target != null)
+        Thread.sleep(10_000)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
@@ -185,6 +186,7 @@ class HttpRequestTest {
         println(sUrl)
         val target = sUrl.headers.location
         require(target != null)
+        Thread.sleep(10_000)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
         assertThat(response.headers.location).isEqualTo(URI.create("https://www.google.com/"))
@@ -207,6 +209,7 @@ class HttpRequestTest {
         val target = sUrl.headers.location
         require(target != null)
         var redirections = 0
+        Thread.sleep(10_000)
         runBlocking {
             repeat(numberUses + 1){
                 launch {
@@ -375,6 +378,7 @@ class HttpRequestTest {
         val sUrl = shortUrl("http://example.com/", 1)
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
         val target = sUrl.headers.location
+        Thread.sleep(10_000)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
         var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
@@ -392,6 +396,7 @@ class HttpRequestTest {
         val sUrl = shortUrl("http://example.com/", expiration=OffsetDateTime.now().plusSeconds(10))
         assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
         val target = sUrl.headers.location
+        Thread.sleep(7_000)
         val response = restTemplate.getForEntity(target, String::class.java)
         assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
         var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
