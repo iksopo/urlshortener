@@ -1,12 +1,11 @@
 package es.unizar.urlshortener.infrastructure.repositories
 
+import es.unizar.urlshortener.core.usecases.ValidateURISTATUS
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
-import javax.persistence.LockModeType
 
 /**
  * Specification of the repository of [ShortUrlEntity].
@@ -29,6 +28,11 @@ interface ShortUrlEntityRepository : JpaRepository<ShortUrlEntity, String> {
     @Modifying
     @Query("UPDATE ShortUrlEntity surl SET surl.leftUses = surl.leftUses - 1 where surl.hash = ?1 AND surl.leftUses > 0")
     fun updateLeftUsesByHash(hash: String): Int
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE ShortUrlEntity surl SET surl.validation = ?2 where surl.hash = ?1")
+    fun updateValidationByHash(hash: String, status: ValidateURISTATUS): Int
 }
 
 /**

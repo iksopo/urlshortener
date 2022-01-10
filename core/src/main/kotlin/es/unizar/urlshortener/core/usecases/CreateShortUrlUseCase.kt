@@ -1,8 +1,7 @@
 package es.unizar.urlshortener.core.usecases
 
 import es.unizar.urlshortener.core.*
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.springframework.beans.factory.annotation.Autowired
 
 
@@ -42,7 +41,7 @@ class CreateShortUrlUseCaseImpl(
                 var su = ShortUrl(
                     hash = id,
                     redirection = Redirection(target = url),
-                    validation = ValidateURISTATUS.VALIDATION_PASS,
+                    validation = ValidateURISTATUS.VALIDATION_IN_PROGRESS,
                     properties = ShortUrlProperties(
                         safe = data.safe,
                         ip = data.ip,
@@ -52,18 +51,34 @@ class CreateShortUrlUseCaseImpl(
                     )
                 )
                 shortUrlRepository.save(su)
-                var validationResult = ValidateURISTATUS.VALIDATION_PASS
-                if (validationResponse.await() == ValidateURIUseCaseResponse.UNSAFE) {
-                    validationResult = ValidateURISTATUS.VALIDATION_FAIL_UNSAFE
-                    shortUrlRepository.deleteByKey(su.hash)
-                    throw UriUnsafe(url)
+                var job = GlobalScope.launch {
+                    runBlocking {
+                        print("INBLOCK")
+                        if (validationResponse.await() == ValidateURIUseCaseResponse.OK) {
+                            var validationResult = ValidateURISTATUS.VALIDATION_PASS
+                            delay(3000)
+                            //Delay para darme tiempo a darle a una uri aún no validada
+                            //También para que tarde mas que el delay de abajo
+                            print("PASSED")
+                            val res = shortUrlRepository.updateValidation(su.hash,validationResult)
+                            print(res)
+                        }
+                        if (validationResponse.await() == ValidateURIUseCaseResponse.UNSAFE) {
+                            print("UNSAFE")
+                            shortUrlRepository.deleteByKey(su.hash)
+                        }
+                        if (validationResponse.await() == ValidateURIUseCaseResponse.NOT_REACHABLE) {
+                            print("UNREACHEABLE")
+                            shortUrlRepository.deleteByKey(su.hash)
+                        }
+                        print("OUTBLOCK")
+                    }
                 }
-                if (validationResponse.await() == ValidateURIUseCaseResponse.NOT_REACHABLE) {
-                    validationResult = ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE
-                    shortUrlRepository.deleteByKey(su.hash)
-                    throw UriUnreachable(url)
-                }
-                su.validation = validationResult
+                delay(1000)
+                //Este delay no me gusta nada, pero a partir de la 2ª ejecución, cancel va antes del launch y falla
+                //espero 1s para que el launch acabe
+                job.cancel()
+                print("CANCEL")
                 su
             }
         } else throw InvalidUrlException(url)

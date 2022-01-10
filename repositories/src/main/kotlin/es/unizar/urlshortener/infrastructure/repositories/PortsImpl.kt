@@ -1,8 +1,10 @@
 package es.unizar.urlshortener.infrastructure.repositories
 
-import es.unizar.urlshortener.core.*
-import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
+import es.unizar.urlshortener.core.Click
+import es.unizar.urlshortener.core.ClickRepositoryService
+import es.unizar.urlshortener.core.ShortUrl
+import es.unizar.urlshortener.core.ShortUrlRepositoryService
+import es.unizar.urlshortener.core.usecases.ValidateURISTATUS
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
@@ -34,6 +36,13 @@ class ShortUrlRepositoryServiceImpl(
             return updatedRows == 1
         } ?: run {
             return true
+        }
+    }
+
+    override fun updateValidation(key : String, status : ValidateURISTATUS) : Boolean {
+        key.let {
+            val updatedRows = shortUrlEntityRepository.updateValidationByHash(key,status)
+            return updatedRows == 1
         }
     }
 

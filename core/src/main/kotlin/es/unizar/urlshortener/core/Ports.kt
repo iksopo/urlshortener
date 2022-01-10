@@ -1,5 +1,7 @@
 package es.unizar.urlshortener.core
 
+import es.unizar.urlshortener.core.usecases.ValidateURISTATUS
+
 /**
  * [ClickRepositoryService] is the port to the repository that provides persistence to [Clicks][Click].
  */
@@ -17,6 +19,7 @@ interface ShortUrlRepositoryService {
     fun checkNotExpired(su : ShortUrl) : Boolean
     fun deleteExpireds() : Pair<Int, Int>
     fun deleteByKey(key: String)
+    fun updateValidation(key: String, status: ValidateURISTATUS): Boolean
 }
 
 /**
