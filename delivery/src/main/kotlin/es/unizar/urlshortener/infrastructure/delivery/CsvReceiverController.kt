@@ -2,6 +2,7 @@ package es.unizar.urlshortener.infrastructure.delivery
 
 import es.unizar.urlshortener.core.FileStorage
 import es.unizar.urlshortener.core.usecases.CreateShortUrlsFromCsvUseCase
+import io.swagger.annotations.*
 import org.apache.tomcat.util.http.fileupload.IOUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.hateoas.server.mvc.linkTo
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
+@Api(value = "example", description = "Massive shortener API", tags = ["API to shorten URIs in a CSV file"])
 @Controller
 class CsvReceiverController(
     private val sseRepository: SseRepository,
@@ -26,16 +28,25 @@ class CsvReceiverController(
     @Autowired
     lateinit var fileStorage: FileStorage
 
+    @ApiOperation(value = "Shows a page to upload the CSV file and gives each user a unique id")
     @GetMapping("/csv")
     fun csv(model: MutableMap<String, Any>): String {
         model["uuid"] = UUID.randomUUID().toString()
         return "uploadform"
     }
 
-    //@ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ])
-    fun uploadCsv(@RequestParam("file") file: MultipartFile, @RequestParam("uuid") uuid:String,
-                request: HttpServletRequest, response: HttpServletResponse) {
+    @ApiOperation(value = "Shortens URIs in a given CSV file and returns them in a new CSV file")
+    @ApiResponses(
+        value = [
+            ApiResponse(code = 200, message = "OK"),
+            ApiResponse(code = 400, message = "The file couldn't be read or had invalid format")]
+    )
+    @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ], produces = [ "text/csv" ])
+    fun uploadCsv(@ApiParam(value = "File with the URIs and their expiration data.", example = "https://google.es,,",
+        type = "multipart/form-data", required = true ) @RequestParam("file") file: MultipartFile,
+        @ApiParam(value = "Id assigned to the user with GET /csv", example = "f97e7508-490b-49bc-a2a0-721d2a63324f",
+        type = "String", required = true) @RequestParam("uuid") uuid: String, request: HttpServletRequest,
+        response: HttpServletResponse) {
         val listener = sseRepository.createProgressListener(uuid)
         response.status = HttpStatus.CREATED.value()
         createShortUrlsFromCsvUseCase.create(file, request.remoteAddr, listener).let {
