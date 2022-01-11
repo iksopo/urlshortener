@@ -294,7 +294,7 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(20_000)
+        Thread.sleep(30_000)
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
             "http://www.google.es", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
@@ -318,7 +318,7 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(20_000)
+        Thread.sleep(30_000)
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
             "http://www.google.es", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
@@ -342,7 +342,7 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(20_000)
+        Thread.sleep(30_000)
         val fileContent = result.response.contentAsString
         val requestedUrls = listOf("http://unizar.es", "https://google.es", "https://moodle.unizar.es")
         val errorUrls = listOf("http://unizar.es")
