@@ -62,8 +62,8 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ResponseBody
     @ExceptionHandler(value = [ValidationInProcess::class])
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    protected fun validationInProcess(ex: ValidationInProcess) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected fun validationInProcess(ex: ValidationInProcess) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
 
     @ResponseBody
     @ExceptionHandler(value = [UriUnreachable::class])
@@ -74,6 +74,12 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [UriUnsafe::class])
     @ResponseStatus(HttpStatus.FORBIDDEN)
     protected fun uriUnsafe(ex: UriUnsafe) = ErrorMessage(HttpStatus.FORBIDDEN.value(), ex.message)
+
+
+    @ResponseBody
+    @ExceptionHandler(value = [NullUrl::class])
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected fun nullUrls(ex: InvalidUrlException) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
 }
 
 data class ErrorMessage(
