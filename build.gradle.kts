@@ -44,7 +44,6 @@ subprojects {
 }
 
 project(":core") {
-    // TODO: check which are not really needed
     apply(plugin = "org.springframework.boot")
     apply(plugin = "io.spring.dependency-management")
     dependencies {
