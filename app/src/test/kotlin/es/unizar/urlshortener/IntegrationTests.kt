@@ -4,10 +4,7 @@ import es.unizar.urlshortener.infrastructure.delivery.ShortUrlDataOut
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
@@ -33,6 +30,7 @@ import java.time.format.DateTimeFormatter
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@TestMethodOrder(MethodOrderer.MethodName::class)
 class HttpRequestTest {
     @LocalServerPort
     private val port = 0
@@ -239,6 +237,25 @@ class HttpRequestTest {
     }
 
     @Test
+    fun `expiration time URIs gets deleted async`() {
+        val sUrl = shortUrl("http://example.com/", expiration=OffsetDateTime.now().plusSeconds(10))
+        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
+        val target = sUrl.headers.location
+        Thread.sleep(7_000)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertEquals("Message is ${response.body}", HttpStatus.TEMPORARY_REDIRECT, response.statusCode)
+        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
+        var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+        var i = 0
+        while (i < 10 && rows == 1){
+            Thread.sleep(5_000)
+            rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
+            i++
+        }
+        assertThat(rows).isEqualTo(0)
+    }
+
+    @Test
     fun `uploadCsv throws exception when the type of file is invalid`() {
         val uuid = getUuid()
         val sentFile = fileToSend("notACsv.txt")
@@ -246,8 +263,8 @@ class HttpRequestTest {
 
         mockMvc.perform(
             multipart("/csv")
-            .file(sentFile)
-            .param("uuid", uuid))
+                .file(sentFile)
+                .param("uuid", uuid))
             .andExpect(MockMvcResultMatchers.status().isBadRequest)
     }
 
@@ -294,13 +311,15 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(45_000)
         val fileContent = result.response.contentAsString
-        val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
-            "http://www.google.es", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
-        val errorUrls = listOf("invalid line", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
-        val createdButErrorUrls = listOf("https://moodle.unizar.es")
-        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
+        val requestedUrlsWithUniqueAnswer = HashMap<String, String>()
+        requestedUrlsWithUniqueAnswer["invalid line"] = "invalid line,,[invalid line] does not follow a supported schema"
+        requestedUrlsWithUniqueAnswer["http://www.google.es"] = "http://www.google.es,http://localhost/tiny-16eea967,"
+        requestedUrlsWithUniqueAnswer["https://www.google.com"] = "https://www.google.com,,[-1] is not a valid number of uses: it must be a number greater than 0"
+        requestedUrlsWithUniqueAnswer["https://www.netflix.com"] = "https://www.netflix.com,,[abdc] is not a valid number of uses: it must be a number greater than 0"
+        requestedUrlsWithUniqueAnswer["https://www.youtube.com"] = "https://www.youtube.com,,[abcd] cannot be parsed to a valid date"
+        val requestedUrlsWithValidExpiration = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es")
+        checkFile(fileContent, requestedUrlsWithUniqueAnswer, requestedUrlsWithValidExpiration)
     }
 
     @Test
@@ -318,13 +337,15 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(45_000)
         val fileContent = result.response.contentAsString
-        val requestedUrls = listOf("http://unizar.es", "https://drive.google.com", "https://moodle.unizar.es", "invalid line",
-            "http://www.google.es", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
-        val errorUrls = listOf("invalid line", "https://www.google.com", "https://www.netflix.com", "https://www.youtube.com")
-        val createdButErrorUrls = listOf("http://www.google.es")
-        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
+        val requestedUrlsWithUniqueAnswer = HashMap<String, String>()
+        requestedUrlsWithUniqueAnswer["invalid line"] = "invalid line,,[invalid line] does not follow a supported schema"
+        requestedUrlsWithUniqueAnswer["http://unizar.es"] = "http://unizar.es,http://localhost/tiny-52531b66,"
+        requestedUrlsWithUniqueAnswer["https://www.google.com"] = "https://www.google.com,,[-1] is not a valid number of uses: it must be a number greater than 0"
+        requestedUrlsWithUniqueAnswer["https://www.netflix.com"] = "https://www.netflix.com,,[abdc] is not a valid number of uses: it must be a number greater than 0"
+        requestedUrlsWithUniqueAnswer["https://www.youtube.com"] = "https://www.youtube.com,,[abcd] cannot be parsed to a valid date"
+        val requestedUrlsWithValidExpiration = listOf("https://drive.google.com", "https://moodle.unizar.es", "http://www.google.es")
+        checkFile(fileContent, requestedUrlsWithUniqueAnswer, requestedUrlsWithValidExpiration)
     }
 
     @Test
@@ -342,14 +363,14 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(45_000)
         val fileContent = result.response.contentAsString
-        val requestedUrls = listOf("http://unizar.es", "https://google.es", "https://moodle.unizar.es")
-        val errorUrls = listOf("http://unizar.es")
-        val createdButErrorUrls = ArrayList<String>()
-        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls)
+        val requestedUrlsWithUniqueAnswer = HashMap<String, String>()
+        requestedUrlsWithUniqueAnswer["http://unizar.es"] = "http://unizar.es,,Invalid structure of line: each line must consist of three comma-separated fields even if they are empty"
+        requestedUrlsWithUniqueAnswer["https://google.es"] = "https://google.es,http://localhost/tiny-af55a34f,"
+        requestedUrlsWithUniqueAnswer["https://moodle.unizar.es"] = "https://moodle.unizar.es,http://localhost/tiny-383f1c34,"
+        checkFile(fileContent, requestedUrlsWithUniqueAnswer, listOf())
     }
-/*
+
     @Test
     fun `uploadCsv returns a file when sent file has more than a hundred lines`() {
         val uuid = getUuid()
@@ -365,17 +386,22 @@ class HttpRequestTest {
 
         assertThat(result.response.getHeaderValue("Location").toString()).isNotEmpty
 
-        Thread.sleep(120_000)
         val fileContent = result.response.contentAsString
-        val requestedUrls = listOf("http://www.google.es", "http://unizar.es", "https://moodle.unizar.es", "invalid line",
-            "https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#mutual-exclusion",
-            "https://developer.android.com/reference/kotlin/java/util/concurrent/atomic/AtomicInteger",
-            "https://www.youtube.com/", "https://github.com/", "https://duckduckgo.com/", "https://twitter.com/",
-            "https://www.mecanografia-online.com/ES/Aspx/SelectExerciseWithCharacters.aspx", "https://www.netflix.com/")
-        val errorUrls = listOf("invalid line")
-        val createdButErrorUrls = ArrayList<String>()
-        checkFile(fileContent, requestedUrls, errorUrls, createdButErrorUrls, 24)
-    }*/
+        val requestedUrlsWithUniqueAnswer = HashMap<String, String>()
+        requestedUrlsWithUniqueAnswer["http://www.google.es"] = "http://www.google.es,http://localhost/tiny-16eea967,"
+        requestedUrlsWithUniqueAnswer["http://unizar.es"] = "http://unizar.es,http://localhost/tiny-52531b66,"
+        requestedUrlsWithUniqueAnswer["https://moodle.unizar.es"] = "https://moodle.unizar.es,http://localhost/tiny-383f1c34,"
+        requestedUrlsWithUniqueAnswer["invalid line"] = "invalid line,,[invalid line] does not follow a supported schema"
+        requestedUrlsWithUniqueAnswer["https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#mutual-exclusion"] = "https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#mutual-exclusion,http://localhost/tiny-06f0557b,"
+        requestedUrlsWithUniqueAnswer["https://developer.android.com/reference/kotlin/java/util/concurrent/atomic/AtomicInteger"] = "https://developer.android.com/reference/kotlin/java/util/concurrent/atomic/AtomicInteger,http://localhost/tiny-9785c2ee,"
+        requestedUrlsWithUniqueAnswer["https://www.youtube.com/"] = "https://www.youtube.com/,http://localhost/tiny-6f12359f,"
+        requestedUrlsWithUniqueAnswer["https://github.com/"] = "https://github.com/,http://localhost/tiny-9ad1e18c,"
+        requestedUrlsWithUniqueAnswer["https://duckduckgo.com/"] = "https://duckduckgo.com/,http://localhost/tiny-7fd1ac7e,"
+        requestedUrlsWithUniqueAnswer["https://twitter.com/"] = "https://twitter.com/,http://localhost/tiny-b6c78edc,"
+        requestedUrlsWithUniqueAnswer["https://www.mecanografia-online.com/ES/Aspx/SelectExerciseWithCharacters.aspx"] = "https://www.mecanografia-online.com/ES/Aspx/SelectExerciseWithCharacters.aspx,http://localhost/tiny-cfef434e,"
+        requestedUrlsWithUniqueAnswer["https://www.netflix.com/"] = "https://www.netflix.com/,http://localhost/tiny-897a52b1,"
+        checkFile(fileContent, requestedUrlsWithUniqueAnswer, listOf(), 24)
+    }
 
     @Test
     fun `expiration uses URIs gets deleted async`() {
@@ -388,24 +414,6 @@ class HttpRequestTest {
         var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
         var i = 0
         while (i < 5 && rows == 1){
-            Thread.sleep(5_000)
-            rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
-            i++
-        }
-        assertThat(rows).isEqualTo(0)
-    }
-
-    @Test
-    fun `expiration time URIs gets deleted async`() {
-        val sUrl = shortUrl("http://example.com/", expiration=OffsetDateTime.now().plusSeconds(10))
-        assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")).isEqualTo(1)
-        val target = sUrl.headers.location
-        Thread.sleep(7_000)
-        val response = restTemplate.getForEntity(target, String::class.java)
-        assertThat(response.headers.location).isEqualTo(URI.create("http://example.com/"))
-        var rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
-        var i = 0
-        while (i < 10 && rows == 1){
             Thread.sleep(5_000)
             rows = JdbcTestUtils.countRowsInTable(jdbcTemplate, "shorturl")
             i++
@@ -453,44 +461,38 @@ class HttpRequestTest {
         return Files.readAllBytes(path)
     }
 
-    private fun checkFile(fileContent: String, requestedUrls: List<String>, errorUrls: List<String>, createdButErrorUrls: List<String>, nReps: Int = 1) {
-        //runBlocking {
-            for (url in requestedUrls) {
-                //launch {
-                    val regex = "$url,[^,]*,[^,]*\n".toRegex()
-                    val matches = regex.findAll(fileContent)
-                    var found = 0
-                    for (match in matches) {
-                        val lineSplit = match.value.split(",")
-                        found++
-
-                        if (found == 1) {
-                            if (errorUrls.contains(url)) {
-                                assertThat(lineSplit[1]).isEmpty()
-                                assertThat(lineSplit[2]).isNotEqualTo("\n")
-                            } else {
-                                assertThat(lineSplit[1]).isNotEmpty
-                                assertThat(lineSplit[2]).isEqualTo("\n")
-
-                                val target = lineSplit[1].replaceFirst("localhost", "localhost:$port")
-                                val response = restTemplate.getForEntity(target, String::class.java)
-                                if (createdButErrorUrls.contains(url)) {
-                                    assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-                                } else {
-                                    assertEquals("Should have redirected to $url. Message: ${response.body}",
-                                        HttpStatus.TEMPORARY_REDIRECT, response.statusCode)
-                                    assertThat(response.headers.location).isEqualTo(URI.create(url))
-                                }
-                            }
-                        } else {
-                            assertThat(match.value).isEqualTo(matches.first().value)
-                        }
-                    }
-                    assertNotEquals("$url not present in returned file", 0, found)
-                    assertEquals("$url appears an incorrect number of times", nReps, found)
-                //}
+    fun checkFile(fileContent: String, requestedUrlsWithUniqueAnswer: HashMap<String, String>,
+                  requestedUrlsWithValidExpiration: List<String>, nReps: Int = 1) {
+        for (url in requestedUrlsWithUniqueAnswer.keys) {
+            val regex = "$url,[^,]*,[^,]*\n".toRegex()
+            val matches = regex.findAll(fileContent)
+            var found = 0
+            for (match in matches) {
+                found++
+                assertThat(match.value.trim()).isEqualTo(requestedUrlsWithUniqueAnswer[url])
             }
+            assertNotEquals("$url not present in returned file", 0, found)
+            assertEquals("$url appears an incorrect number of times", nReps, found)
         }
-    //}
+
+        for (url in requestedUrlsWithValidExpiration) {
+            val regex = "$url,[^,]*,[^,]*\n".toRegex()
+            val matches = regex.findAll(fileContent)
+            var found = 0
+            for (match in matches) {
+                val lineSplit = match.value.split(",")
+                found++
+
+                if (found == 1) {
+                    assertThat(lineSplit[1]).isNotEmpty
+                    assertThat(lineSplit[2]).isEqualTo("\n")
+                } else {
+                    assertThat(match.value.trim()).isEqualTo(matches.first().value.trim())
+                }
+            }
+            assertNotEquals("$url not present in returned file", 0, found)
+            assertEquals("$url appears an incorrect number of times", nReps, found)
+        }
+    }
 
 }
