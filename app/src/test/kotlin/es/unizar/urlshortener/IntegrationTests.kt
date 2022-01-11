@@ -454,9 +454,9 @@ class HttpRequestTest {
     }
 
     private fun checkFile(fileContent: String, requestedUrls: List<String>, errorUrls: List<String>, createdButErrorUrls: List<String>, nReps: Int = 1) {
-        runBlocking {
+        //runBlocking {
             for (url in requestedUrls) {
-                launch {
+                //launch {
                     val regex = "$url,[^,]*,[^,]*\n".toRegex()
                     val matches = regex.findAll(fileContent)
                     var found = 0
@@ -488,9 +488,9 @@ class HttpRequestTest {
                     }
                     assertNotEquals("$url not present in returned file", 0, found)
                     assertEquals("$url appears an incorrect number of times", nReps, found)
-                }
+                //}
             }
         }
-    }
+    //}
 
 }
