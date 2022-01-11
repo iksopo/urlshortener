@@ -9,6 +9,9 @@ interface ProgressListener {
     fun onCompletion()
 }
 
+/**
+ * Sends progress information to all WebSocket connections in sseEmitters.
+ */
 class SseEmitterProgressListener(private val sseEmitters: Collection<SseEmitter>) : ProgressListener {
     override fun onProgress(value: Int) {
         val html = """
