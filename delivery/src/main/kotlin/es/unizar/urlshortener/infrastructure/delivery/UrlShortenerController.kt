@@ -146,30 +146,6 @@ class UrlShortenerControllerImpl(
             val h = HttpHeaders()
             val url = linkTo<UrlShortenerControllerImpl> { redirectTo(it.hash, request) }.toUri()
             h.location = url
-
-            //Check URL is valid
-            //https://testsafebrowsing.appspot.com/s/unwanted.html URI maliciosa de ejemplo para probar.
-
-            if(it.validation==ValidateURISTATUS.VALIDATION_FAIL_UNSAFE){
-                val response = ShortUrlDataOut(
-                    url = url,
-                    properties = mapOf(
-                        "Unsafe" to it.properties.safe,
-                    )
-                )
-                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.FORBIDDEN)
-            }
-            if(it.validation==ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE){
-                val response = ShortUrlDataOut(
-                    url = url,
-                    properties = mapOf(
-                        "Not Reachable" to it.properties.safe,
-                    )
-                )
-                return ResponseEntity<ShortUrlDataOut>(response, h, HttpStatus.NOT_FOUND)
-            }
-
-
             val response = ShortUrlDataOut(
                 url = url,
                 properties = mapOf(
