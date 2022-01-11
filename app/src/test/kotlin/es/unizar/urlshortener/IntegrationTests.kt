@@ -421,6 +421,32 @@ class HttpRequestTest {
         assertThat(rows).isEqualTo(0)
     }
 
+    @Test
+    fun `creates an unsafe url and fetchs it twice`() {
+        val sUrl = shortUrl("https://testsafewsing.appspot.com/s/unwanted.html")
+        val target = sUrl.headers.location
+        require(target != null)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+
+        Thread.sleep(8_000)
+        val response2 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
+    }
+
+    @Test
+    fun `creates an url and fetchs it before and after validation`() {
+        val sUrl = shortUrl("http://example.com/")
+        val target = sUrl.headers.location
+        require(target != null)
+        val response = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
+
+        Thread.sleep(8_000)
+        val response2 = restTemplate.getForEntity(target, String::class.java)
+        assertThat(response2.statusCode).isEqualTo(HttpStatus.TEMPORARY_REDIRECT)
+    }
+
     private fun shortUrl(url: String, leftUses: Int? = null, expiration: OffsetDateTime? = null): ResponseEntity<ShortUrlDataOut> {
         val headers = HttpHeaders()
         headers.contentType = MediaType.APPLICATION_FORM_URLENCODED
