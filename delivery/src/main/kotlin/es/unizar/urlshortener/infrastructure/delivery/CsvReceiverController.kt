@@ -43,9 +43,8 @@ class CsvReceiverController(
     )
     @PostMapping("/csv", consumes = [ MediaType.MULTIPART_FORM_DATA_VALUE ], produces = [ "text/csv" ])
     fun uploadCsv(@ApiParam(value = "File with the URIs and their expiration data.", example = "https://google.es,,",
-        type = "multipart/form-data", required = true ) @RequestParam("file") file: MultipartFile,
-        @ApiParam(value = "Id assigned to the user with GET /csv", example = "f97e7508-490b-49bc-a2a0-721d2a63324f",
-        type = "String", required = true) @RequestParam("uuid") uuid: String, request: HttpServletRequest,
+        type = "multipart/form-data", required = true) @RequestParam("file") file: MultipartFile,
+        @RequestParam("uuid") uuid: String, request: HttpServletRequest,
         response: HttpServletResponse) {
         val listener = sseRepository.createProgressListener(uuid)
         response.status = HttpStatus.CREATED.value()
