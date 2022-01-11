@@ -57,6 +57,12 @@ interface UrlShortenerController {
      *
      * **Note**: Delivery of use case [CreateShortUrlUseCase].
      */
+    @ApiOperation(value = "Shorten url")
+    @ApiResponses(
+        value = [
+            ApiResponse(code = 201, message = "Uri created"),
+            ApiResponse(code = 400, message = "Bad request, missing parameter or wrong format")]
+    )
     fun shortener(data: ShortUrlDataIn, request: HttpServletRequest): ResponseEntity<ShortUrlDataOut>
 
 }
