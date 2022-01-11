@@ -62,8 +62,8 @@ class RestResponseEntityExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ResponseBody
     @ExceptionHandler(value = [ValidationInProcess::class])
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    protected fun validationInProcess(ex: ValidationInProcess) = ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.message)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected fun validationInProcess(ex: ValidationInProcess) = ErrorMessage(HttpStatus.BAD_REQUEST.value(), ex.message)
 
     @ResponseBody
     @ExceptionHandler(value = [UriUnreachable::class])
