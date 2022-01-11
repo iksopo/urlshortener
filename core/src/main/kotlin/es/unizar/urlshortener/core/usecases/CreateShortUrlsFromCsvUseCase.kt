@@ -36,9 +36,10 @@ class CreateShortUrlsFromCsvUseCaseImpl(
             throw InvalidTypeOfFile(file.originalFilename)
         }
         val counter = AtomicInteger()
-        listener.onProgress(counter.get())
+        listener.onProgress(counter.get()) // Send empty progress bar to web client
         val shortUrls = ArrayList<Pair<ShortUrl, String?>>()
         val mutex = Mutex()
+        // Name of temporary file to avoid collisions
         val newName = "${fileStorage.generateName()}.csv"
         fileStorage.store(file, newName)
         val lines = fileStorage.readLines(newName).filter { l -> l != "" }
@@ -118,37 +119,17 @@ class CreateShortUrlsFromCsvUseCaseImpl(
                                             )
                                         )
                                     }
-                                is UriUnsafe ->
-                                    mutex.withLock {
-                                        shortUrls.add(
-                                            Pair(
-                                                ShortUrl(
-                                                    hash = "", redirection = Redirection(url), validation = ValidateURISTATUS.VALIDATION_FAIL_UNSAFE,
-                                                    properties = ShortUrlProperties(safe = false, ip = remoteAddr)
-                                                ), ex.message
-                                            )
-                                        )
-                                    }
-                                is UriUnreachable ->
-                                    mutex.withLock {
-                                        shortUrls.add(
-                                            Pair(
-                                                ShortUrl(
-                                                    hash = "", redirection = Redirection(url), validation = ValidateURISTATUS.VALIDATION_FAIL_UNREACHABLE,
-                                                    properties = ShortUrlProperties(safe = false, ip = remoteAddr)
-                                                ), ex.message
-                                            )
-                                        )
-                                    }
                             }
                         }
                     }
                     val progress = counter.incrementAndGet() * 100 / numUrls
-                    listener.onProgress(progress)
+                    listener.onProgress(progress) // Update progress bar in client
                 }
             }
         }
         listener.onCompletion()
+        // If all the lines in the file had an invalid structure (not three comma-separated fields),
+        // delete temporary file instead of updating it, and propagate error
         if (!wellFormatted.get() && allWrongFormatted.get()) {
             fileStorage.deleteFile(newName)
             throw WrongStructuredFile(nameSplitByPoint.joinToString("."))
