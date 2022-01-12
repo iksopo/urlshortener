@@ -8,7 +8,6 @@ import es.unizar.urlshortener.infrastructure.repositories.ClickEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ClickRepositoryServiceImpl
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlEntityRepository
 import es.unizar.urlshortener.infrastructure.repositories.ShortUrlRepositoryServiceImpl
-import io.micrometer.core.aop.TimedAspect
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -58,8 +57,6 @@ class ApplicationConfiguration(
     @Bean
     fun validateURIUseCase() = ValidateURIUseCaseImpl()
 
-    @Bean
-    fun timedAspect(registry: MeterRegistry): TimedAspect = TimedAspect(registry)
 }
 
 

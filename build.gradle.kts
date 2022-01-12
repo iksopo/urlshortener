@@ -138,6 +138,5 @@ project(":app") {
 
         "implementation"("org.springframework.boot:spring-boot-starter-actuator")
         "implementation"("io.micrometer:micrometer-registry-prometheus:latest.release")
-        "implementation"("org.springframework.boot:spring-boot-starter-aop")
     }
 }
